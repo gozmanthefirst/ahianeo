@@ -1,0 +1,12 @@
+{
+  "extends": "@repo/tsconfig/bun.json",
+  "compilerOptions": {
+    // This is for importing the package.json to the openapi config file.
+    "resolveJsonModule": true,
+
+    // This is for import aliases.
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}

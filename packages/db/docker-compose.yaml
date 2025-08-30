@@ -1,0 +1,19 @@
+name: ahianeo-db
+
+services:
+  mysql:
+    image: mysql:8.4.6
+    container_name: ahianeo-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ahianeo
+      MYSQL_USER: user
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
