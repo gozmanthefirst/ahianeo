@@ -1,3 +1,4 @@
+import type { InferSelectModel } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import z from "zod";
 
@@ -17,3 +18,5 @@ export const UserUpdateSchema = createInsertSchema(user, {
     updatedAt: true,
   })
   .partial();
+
+export type User = InferSelectModel<typeof user>;
