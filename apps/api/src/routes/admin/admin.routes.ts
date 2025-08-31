@@ -1,6 +1,6 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import {
-  CreateUserSchema,
+  BanUserSchema,
   UserSelectSchema,
 } from "@repo/db/validators/user-validators";
 
@@ -14,10 +14,10 @@ import {
   successContent,
 } from "@/utils/openapi-helpers";
 
-const tags = ["Superadmin"];
+const tags = ["Admin"];
 
-export const createUser = createRoute({
-  path: "/superadmin/create-user",
+export const banUser = createRoute({
+  path: "/admin/ban-user",
   method: "post",
   security: [
     {
@@ -29,21 +29,21 @@ export const createUser = createRoute({
     body: {
       content: {
         "application/json": {
-          schema: CreateUserSchema,
+          schema: BanUserSchema,
         },
       },
-      description: "Create a new user",
+      description: "Ban a user",
       required: true,
     },
   },
   responses: {
-    [HttpStatusCodes.CREATED]: successContent({
-      description: "User created",
+    [HttpStatusCodes.OK]: successContent({
+      description: "User banned",
       schema: z.object({
         user: UserSelectSchema,
       }),
       resObj: {
-        details: "User created successfully",
+        details: "User banned successfully",
         data: {
           user: userExamples.user,
         },
@@ -55,8 +55,8 @@ export const createUser = createRoute({
         validationError: {
           summary: "Validation error",
           code: "INVALID_DATA",
-          details: getErrDetailsFromErrFields(userExamples.createUserValErrs),
-          fields: userExamples.createUserValErrs,
+          details: getErrDetailsFromErrFields(userExamples.banUserValErrs),
+          fields: userExamples.banUserValErrs,
         },
       },
     }),
@@ -65,10 +65,35 @@ export const createUser = createRoute({
       "Unauthorized",
       "No session found",
     ),
-    [HttpStatusCodes.FORBIDDEN]: genericErrorContent(
-      "FORBIDDEN",
-      "Forbidden",
-      "User does not have the required role",
+    [HttpStatusCodes.FORBIDDEN]: errorContent({
+      description: "Forbidden",
+      examples: {
+        requiredRole: {
+          summary: "Required role missing",
+          code: "FORBIDDEN",
+          details: "User does not have the required role",
+        },
+        cannotBanSelf: {
+          summary: "Cannot ban self",
+          code: "FORBIDDEN",
+          details: "User cannot ban their own account",
+        },
+        cannotBanSuperadmin: {
+          summary: "Cannot ban superadmin",
+          code: "FORBIDDEN",
+          details: "User cannot ban a superadmin",
+        },
+        cannotBanFellowAdmin: {
+          summary: "Cannot ban fellow admin",
+          code: "FORBIDDEN",
+          details: "An admin cannot ban a fellow admin",
+        },
+      },
+    }),
+    [HttpStatusCodes.NOT_FOUND]: genericErrorContent(
+      "NOT_FOUND",
+      "User not found",
+      "User not found",
     ),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: genericErrorContent(
       "UNPROCESSABLE_ENTITY",
@@ -83,9 +108,9 @@ export const createUser = createRoute({
   },
 });
 
-export const deleteUser = createRoute({
-  path: "/superadmin/delete-user",
-  method: "delete",
+export const unbanUser = createRoute({
+  path: "/admin/unban-user",
+  method: "post",
   security: [
     {
       Bearer: [],
@@ -101,20 +126,20 @@ export const deleteUser = createRoute({
           }),
         },
       },
-      description: "Delete a user. Cannot be undone.",
+      description: "Unban a user",
       required: true,
     },
   },
   responses: {
     [HttpStatusCodes.OK]: successContent({
-      description: "User deleted",
+      description: "User unbanned",
       schema: z.object({
-        success: z.boolean(),
+        user: UserSelectSchema,
       }),
       resObj: {
-        details: "User deleted successfully",
+        details: "User unbanned successfully",
         data: {
-          success: true,
+          user: userExamples.user,
         },
       },
     }),
@@ -142,15 +167,20 @@ export const deleteUser = createRoute({
           code: "FORBIDDEN",
           details: "User does not have the required role",
         },
-        cannotDeleteSelf: {
-          summary: "Cannot delete self",
+        cannotUnbanSelf: {
+          summary: "Cannot unban self",
           code: "FORBIDDEN",
-          details: "User cannot delete their own account",
+          details: "User cannot unban their own account",
         },
-        cannotDeleteSuperadmin: {
-          summary: "Cannot delete superadmin",
+        cannotUnbanSuperadmin: {
+          summary: "Cannot unban superadmin",
           code: "FORBIDDEN",
-          details: "User cannot delete a superadmin",
+          details: "User cannot unban a superadmin",
+        },
+        cannotUnbanFellowAdmin: {
+          summary: "Cannot unban fellow admin",
+          code: "FORBIDDEN",
+          details: "An admin cannot unban a fellow admin",
         },
       },
     }),
@@ -172,5 +202,5 @@ export const deleteUser = createRoute({
   },
 });
 
-export type CreateUserRoute = typeof createUser;
-export type DeleteUserRoute = typeof deleteUser;
+export type BanUserRoute = typeof banUser;
+export type UnbanUserRoute = typeof unbanUser;

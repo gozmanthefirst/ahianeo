@@ -33,6 +33,15 @@ export const authExamples = {
 };
 
 export const userExamples = {
+  smallUser: {
+    id: "aBCDEF0gHijkLM1NO2PqrsTuVwXyzaBc",
+    email: "newuser@example.com",
+    name: "New User",
+    image: "https://example.com/image.png",
+    emailVerified: false,
+    createdAt: "2025-08-11T18:26:20.296Z",
+    updatedAt: "2025-08-11T18:26:20.296Z",
+  },
   user: {
     id: "aBCDEF0gHijkLM1NO2PqrsTuVwXyzaBc",
     email: "newuser@example.com",
@@ -51,7 +60,12 @@ export const userExamples = {
     email: "Invalid email address",
     role: 'Invalid option: expected one of "user"|"admin"',
   },
-  deleteUserValErrs: {
+  banUserValErrs: {
+    userId: "Too small: expected string to have >=1 characters",
+    banReason: "Too small: expected string to have >=1 characters",
+    banExpiresIn: "Too small: expected number to be >=3600",
+  },
+  userIdValErrs: {
     userId: "Too small: expected string to have >=1 characters",
   },
   updateUserValErrs: {

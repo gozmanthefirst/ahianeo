@@ -26,4 +26,13 @@ export const CreateUserSchema = createInsertSchema(user, {
   role: true,
 });
 
+export const BanUserSchema = z.object({
+  userId: z.string().min(1),
+  banReason: z.string().min(1).default("No reason provided"),
+  banExpiresIn: z
+    .number()
+    .min(60 * 60)
+    .optional(),
+});
+
 export type User = InferSelectModel<typeof user>;

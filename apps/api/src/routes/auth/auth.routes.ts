@@ -174,7 +174,7 @@ export const signIn = createRoute({
         data: {
           redirect: false,
           token: authExamples.token,
-          user: userExamples.user,
+          user: userExamples.smallUser,
         },
       },
     }),
@@ -200,6 +200,11 @@ export const signIn = createRoute({
         },
       },
     }),
+    [HttpStatusCodes.FORBIDDEN]: genericErrorContent(
+      "BANNED_USER",
+      "Banned user",
+      "You have been banned from this application. Please contact support if you believe this is an error.",
+    ),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: genericErrorContent(
       "UNPROCESSABLE_ENTITY",
       "Unprocessable entity",
