@@ -25,3 +25,5 @@ export type ErrorStatusCodes<R> = Extract<
 > extends { status: infer S }
   ? S
   : never;
+
+export type Role = "user" | "admin" | "superadmin";
