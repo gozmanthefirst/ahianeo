@@ -19,7 +19,7 @@ export const user = ac.newRole({
 });
 
 export const admin = ac.newRole({
-  user: ["list", "ban", "impersonate", "delete", "set-password", "update"],
+  user: ["list", "ban", "set-password", "update"],
   session: adminAc.statements.session,
   product: ["create", "view", "update", "delete"],
   color: ["create", "view", "update", "delete"],
