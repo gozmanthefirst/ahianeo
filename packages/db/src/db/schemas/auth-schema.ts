@@ -13,6 +13,7 @@ export const session = mysqlTable("session", {
   userId: varchar("user_id", { length: 36 })
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  impersonatedBy: text("impersonated_by"),
 });
 
 export const account = mysqlTable("account", {

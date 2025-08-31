@@ -1,9 +1,10 @@
 import db from "@repo/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { bearer, openAPI } from "better-auth/plugins";
+import { admin as adminPlugin, bearer, openAPI } from "better-auth/plugins";
 
 import { sendResetPasswordEmail, sendVerificationEmail } from "@/lib/email";
+import { ac, admin, superadmin, user } from "@/lib/permissions";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -34,5 +35,18 @@ export const auth = betterAuth({
     },
   },
 
-  plugins: [openAPI(), bearer()],
+  plugins: [
+    openAPI(),
+    bearer(),
+    adminPlugin({
+      ac,
+      roles: {
+        user,
+        admin,
+        superadmin,
+      },
+      adminRoles: ["admin", "superadmin"],
+      impersonationSessionDuration: 60 * 60 * 24,
+    }),
+  ],
 });
