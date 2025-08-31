@@ -54,3 +54,31 @@ export const sendResetPasswordEmail = async ({
     `,
   });
 };
+
+export const sendAccountCreatedEmail = async ({
+  to,
+  name,
+  role,
+  email,
+  password,
+}: Omit<SendEmail, "url" | "token"> & {
+  role: string;
+  email: string;
+  password: string;
+}) => {
+  await resend.emails.send({
+    from: `Ahianeo <ahianeo@${env.RESEND_DOMAIN}>`,
+    to,
+    subject: `Your ${role} account has been created`,
+    html: `
+      <h1>Hello ${name || "there"}!</h1>
+      <p>Your ${role} account has been successfully created. You can now log in using the details below:</p>
+      <ul>
+        <li>Email: ${email}</li>
+        <li>Password: ${password}</li>
+      </ul>
+      <p>For your security, please change your password after logging in.</p>
+      <p>If you didn't create an account, you can safely ignore this email.</p>
+    `,
+  });
+};
