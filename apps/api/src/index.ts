@@ -2,11 +2,12 @@ import createApp from "@/lib/create-app";
 import configureOpenAPI from "@/lib/openapi";
 import { createSuperadmin } from "@/queries/admin-queries";
 import authRouter from "./routes/auth/auth.index";
+import superadminRouter from "./routes/superadmin/superadmin.index";
 import userRouter from "./routes/user/user.index";
 
 const app = createApp();
 
-const routers = [authRouter, userRouter];
+const routers = [authRouter, userRouter, superadminRouter];
 
 configureOpenAPI(app);
 

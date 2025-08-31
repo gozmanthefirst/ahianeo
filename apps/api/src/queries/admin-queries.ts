@@ -5,12 +5,13 @@ import type { User } from "@repo/db/validators/user-validators";
 import { auth } from "@/lib/auth";
 import { sendAccountCreatedEmail } from "@/lib/email";
 import env from "@/lib/env";
+import type { Role } from "@/lib/types";
 import { generatePassword } from "@/utils/strings";
 
 export const createUser = async (c: {
   name: string;
   email: string;
-  role: "user" | "admin" | "superadmin";
+  role: Role;
 }): Promise<User> => {
   // Check if the user with the email already exists
   const [existingUser] = await db
@@ -34,12 +35,18 @@ export const createUser = async (c: {
     },
   });
 
+  // Send account created & verification emails
   await sendAccountCreatedEmail({
     to: c.email,
     name: c.name,
     role: c.role,
     email: c.email,
     password,
+  });
+  await auth.api.sendVerificationEmail({
+    body: {
+      email: c.email,
+    },
   });
 
   return newUser as User;

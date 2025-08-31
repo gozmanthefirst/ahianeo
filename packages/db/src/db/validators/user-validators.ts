@@ -10,13 +10,20 @@ export const UserUpdateSchema = createInsertSchema(user, {
   name: z.string().min(1).max(100),
   image: z.url(),
 })
-  .omit({
-    id: true,
-    email: true,
-    emailVerified: true,
-    createdAt: true,
-    updatedAt: true,
+  .pick({
+    name: true,
+    image: true,
   })
   .partial();
+
+export const CreateUserSchema = createInsertSchema(user, {
+  name: z.string().min(1).max(100),
+  email: z.email(),
+  role: z.enum(["user", "admin"]),
+}).pick({
+  name: true,
+  email: true,
+  role: true,
+});
 
 export type User = InferSelectModel<typeof user>;

@@ -41,6 +41,18 @@ export const userExamples = {
     emailVerified: false,
     createdAt: "2025-08-11T18:26:20.296Z",
     updatedAt: "2025-08-11T18:26:20.296Z",
+    role: "user",
+    banned: false,
+    banReason: null,
+    banExpires: null,
+  },
+  createUserValErrs: {
+    name: "Too small: expected string to have >=1 characters",
+    email: "Invalid email address",
+    role: 'Invalid option: expected one of "user"|"admin"',
+  },
+  deleteUserValErrs: {
+    userId: "Too small: expected string to have >=1 characters",
   },
   updateUserValErrs: {
     name: "Too small: expected string to have >=1 characters",
