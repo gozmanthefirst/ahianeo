@@ -13,6 +13,7 @@ adminRouter
   .openapi(adminRoutes.listUsers, adminHandlers.listUsers)
   .openapi(adminRoutes.listUserSessions, adminHandlers.listUserSessions)
   .openapi(adminRoutes.revokeUserSession, adminHandlers.revokeUserSession)
+  .openapi(adminRoutes.revokeUserSessions, adminHandlers.revokeUserSessions)
   .openapi(adminRoutes.banUser, adminHandlers.banUser)
   .openapi(adminRoutes.unbanUser, adminHandlers.unbanUser);
 

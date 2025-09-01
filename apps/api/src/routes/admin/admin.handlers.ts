@@ -7,6 +7,7 @@ import type {
   ListUserSessionsRoute,
   ListUsersRoute,
   RevokeUserSessionRoute,
+  RevokeUserSessionsRoute,
 } from "@/routes/admin/admin.routes";
 import { errorResponse, successResponse } from "@/utils/api-response";
 import HttpStatusCodes from "@/utils/http-status-codes";
@@ -134,7 +135,11 @@ export const revokeUserSession: AppRouteHandler<
       );
     }
 
-    if (userToRevokeSession.role === "admin" && user.role === "admin") {
+    if (
+      userToRevokeSession.role === "admin" &&
+      user.role === "admin" &&
+      userToRevokeSession.id !== user.id
+    ) {
       return c.json(
         errorResponse("FORBIDDEN", "Admin cannot revoke fellow admin session"),
         HttpStatusCodes.FORBIDDEN,
@@ -158,6 +163,70 @@ export const revokeUserSession: AppRouteHandler<
           error.body?.message ?? error.message,
         ),
         error.statusCode as ErrorStatusCodes<typeof revokeUserSession>,
+      );
+    }
+
+    throw error;
+  }
+};
+
+export const revokeUserSessions: AppRouteHandler<
+  RevokeUserSessionsRoute
+> = async (c) => {
+  try {
+    const user = c.get("user");
+    const data = c.req.valid("json");
+
+    const userToRevokeSessions = await getUserById(data.userId);
+
+    if (!userToRevokeSessions) {
+      return c.json(
+        errorResponse("NOT_FOUND", "User not found"),
+        HttpStatusCodes.NOT_FOUND,
+      );
+    }
+
+    if (
+      userToRevokeSessions.role === "superadmin" &&
+      user.role !== "superadmin"
+    ) {
+      return c.json(
+        errorResponse("FORBIDDEN", "User cannot revoke superadmin sessions"),
+        HttpStatusCodes.FORBIDDEN,
+      );
+    }
+
+    if (
+      userToRevokeSessions.role === "admin" &&
+      user.role === "admin" &&
+      userToRevokeSessions.id !== user.id
+    ) {
+      return c.json(
+        errorResponse("FORBIDDEN", "Admin cannot revoke fellow admin session"),
+        HttpStatusCodes.FORBIDDEN,
+      );
+    }
+
+    const response = await auth.api.revokeUserSessions({
+      body: data,
+      headers: c.req.raw.headers,
+    });
+
+    return c.json(
+      successResponse(
+        response,
+        "All sessions for the user revoked successfully",
+      ),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    if (error instanceof APIError) {
+      return c.json(
+        errorResponse(
+          error.body?.code ?? "AUTH_ERROR",
+          error.body?.message ?? error.message,
+        ),
+        error.statusCode as ErrorStatusCodes<typeof revokeUserSessions>,
       );
     }
 
