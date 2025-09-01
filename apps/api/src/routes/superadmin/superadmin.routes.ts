@@ -70,9 +70,10 @@ export const createUser = createRoute({
       "Forbidden",
       "User does not have the required role",
     ),
-    [HttpStatusCodes.UNPROCESSABLE_ENTITY]: genericErrorContent(
-      "UNPROCESSABLE_ENTITY",
-      "Unprocessable entity",
+    [HttpStatusCodes.CONFLICT]: genericErrorContent(
+      "USER_EXISTS",
+      "User already exists",
+      "User already exists",
     ),
     [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
       "TOO_MANY_REQUESTS",

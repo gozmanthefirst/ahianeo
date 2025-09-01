@@ -3,7 +3,7 @@ import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth";
 import type { AppRouteHandler, ErrorStatusCodes } from "@/lib/types";
 import { createUser as createUserByAdmin } from "@/queries/admin-queries";
-import { getUserById } from "@/queries/user-queries";
+import { getUserByEmail, getUserById } from "@/queries/user-queries";
 import type { DeleteUserRoute } from "@/routes/superadmin/superadmin.routes";
 import { errorResponse, successResponse } from "@/utils/api-response";
 import HttpStatusCodes from "@/utils/http-status-codes";
@@ -12,6 +12,15 @@ import type { CreateUserRoute } from "./superadmin.routes";
 export const createUser: AppRouteHandler<CreateUserRoute> = async (c) => {
   try {
     const data = c.req.valid("json");
+
+    const existingUser = await getUserByEmail(data.email);
+
+    if (existingUser) {
+      return c.json(
+        errorResponse("USER_EXISTS", "User already exists"),
+        HttpStatusCodes.CONFLICT,
+      );
+    }
 
     const newUser = await createUserByAdmin(data);
 
