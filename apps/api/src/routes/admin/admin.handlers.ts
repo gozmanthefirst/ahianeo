@@ -3,9 +3,50 @@ import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth";
 import type { AppRouteHandler, ErrorStatusCodes } from "@/lib/types";
 import { getUserById } from "@/queries/user-queries";
+import type { ListUsersRoute } from "@/routes/admin/admin.routes";
 import { errorResponse, successResponse } from "@/utils/api-response";
 import HttpStatusCodes from "@/utils/http-status-codes";
 import type { BanUserRoute, UnbanUserRoute } from "./admin.routes";
+
+export const listUsers: AppRouteHandler<ListUsersRoute> = async (c) => {
+  try {
+    const data = c.req.valid("query");
+
+    const dataOffset = ((data.currentPage ?? 1) - 1) * (data.pageSize ?? 100);
+
+    const result = await auth.api.listUsers({
+      query: { ...data, limit: data.pageSize ?? 100, offset: dataOffset },
+      headers: c.req.raw.headers,
+    });
+
+    const totalPages = Math.ceil(result.total / (data.pageSize ?? 100));
+
+    const usersWithPagination = {
+      users: result.users,
+      total: result.total,
+      pageSize: data.pageSize ?? 100,
+      currentPage: data.currentPage ?? 1,
+      totalPages,
+    };
+
+    return c.json(
+      successResponse(usersWithPagination, "Users retrieved successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    if (error instanceof APIError) {
+      return c.json(
+        errorResponse(
+          error.body?.code ?? "AUTH_ERROR",
+          error.body?.message ?? error.message,
+        ),
+        error.statusCode as ErrorStatusCodes<typeof banUser>,
+      );
+    }
+
+    throw error;
+  }
+};
 
 export const banUser: AppRouteHandler<BanUserRoute> = async (c) => {
   try {

@@ -10,6 +10,7 @@ adminRouter
   .use("/admin/*", checkRole(["admin", "superadmin"]));
 
 adminRouter
+  .openapi(adminRoutes.listUsers, adminHandlers.listUsers)
   .openapi(adminRoutes.banUser, adminHandlers.banUser)
   .openapi(adminRoutes.unbanUser, adminHandlers.unbanUser);
 

@@ -60,6 +60,18 @@ export const userExamples = {
     email: "Invalid email address",
     role: 'Invalid option: expected one of "user"|"admin"',
   },
+  listUsersValErrs: {
+    searchValue: "Too small: expected string to have >=1 characters",
+    searchField: 'Invalid option: expected one of "name"|"email"',
+    searchOperator:
+      'Invalid option: expected one of "contains"|"starts_with"|"ends_with"',
+    limit: "Too small: expected number to be >=1",
+    offset: "Invalid input: expected number, received NaN",
+    sortBy: "Too small: expected string to have >=1 characters",
+    sortDirection: 'Invalid option: expected one of "asc"|"desc"',
+    filterOperator:
+      'Invalid option: expected one of "eq"|"ne"|"gt"|"gte"|"lt"|"lte"|"contains"',
+  },
   banUserValErrs: {
     userId: "Too small: expected string to have >=1 characters",
     banReason: "Too small: expected string to have >=1 characters",

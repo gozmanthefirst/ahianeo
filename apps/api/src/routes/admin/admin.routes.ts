@@ -4,6 +4,7 @@ import {
   UserSelectSchema,
 } from "@repo/db/validators/user-validators";
 
+import { ListUsersQuerySchema } from "@/lib/schemas";
 import HttpStatusCodes from "@/utils/http-status-codes";
 import { userExamples } from "@/utils/openapi-examples";
 import {
@@ -15,6 +16,150 @@ import {
 } from "@/utils/openapi-helpers";
 
 const tags = ["Admin"];
+
+export const listUsers = createRoute({
+  path: "/admin/list-users",
+  method: "get",
+  security: [
+    {
+      Bearer: [],
+    },
+  ],
+  tags,
+  request: {
+    query: ListUsersQuerySchema,
+  },
+  responses: {
+    [HttpStatusCodes.OK]: successContent({
+      description: "Users retrieved",
+      schema: z.object({
+        users: z.array(UserSelectSchema),
+        total: z.number(),
+        pageSize: z.number(),
+        currentPage: z.number(),
+        totalPages: z.number(),
+      }),
+      resObj: {
+        details: "Users retrieved successfully",
+        data: {
+          users: [userExamples.user],
+          total: 223,
+          pageSize: 100,
+          currentPage: 1,
+          totalPages: 3,
+        },
+      },
+    }),
+
+    [HttpStatusCodes.BAD_REQUEST]: errorContent({
+      description: "Invalid request data",
+      examples: {
+        validationError: {
+          summary: "Validation error",
+          code: "INVALID_DATA",
+          details: getErrDetailsFromErrFields(userExamples.listUsersValErrs),
+          fields: userExamples.listUsersValErrs,
+        },
+      },
+    }),
+    [HttpStatusCodes.UNAUTHORIZED]: genericErrorContent(
+      "UNAUTHORIZED",
+      "Unauthorized",
+      "No session found",
+    ),
+    [HttpStatusCodes.FORBIDDEN]: errorContent({
+      description: "Forbidden",
+      examples: {
+        requiredRole: {
+          summary: "Required role missing",
+          code: "FORBIDDEN",
+          details: "User does not have the required role",
+        },
+      },
+    }),
+    [HttpStatusCodes.UNPROCESSABLE_ENTITY]: genericErrorContent(
+      "UNPROCESSABLE_ENTITY",
+      "Unprocessable entity",
+    ),
+    [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
+      "TOO_MANY_REQUESTS",
+      "Too many requests",
+      "Too many requests have been made. Please try again later.",
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: serverErrorContent(),
+  },
+});
+
+export const listUserSessions = createRoute({
+  path: "/admin/list-user-sessions",
+  method: "get",
+  security: [
+    {
+      Bearer: [],
+    },
+  ],
+  tags,
+  request: {
+    query: ListUsersQuerySchema,
+  },
+  responses: {
+    [HttpStatusCodes.OK]: successContent({
+      description: "Users retrieved",
+      schema: z.object({
+        users: z.array(UserSelectSchema),
+        total: z.number(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      }),
+      resObj: {
+        details: "Users retrieved successfully",
+        data: {
+          users: [userExamples.user],
+          total: 223,
+          limit: 100,
+          offset: 0,
+        },
+      },
+    }),
+
+    [HttpStatusCodes.BAD_REQUEST]: errorContent({
+      description: "Invalid request data",
+      examples: {
+        validationError: {
+          summary: "Validation error",
+          code: "INVALID_DATA",
+          details: getErrDetailsFromErrFields(userExamples.listUsersValErrs),
+          fields: userExamples.listUsersValErrs,
+        },
+      },
+    }),
+    [HttpStatusCodes.UNAUTHORIZED]: genericErrorContent(
+      "UNAUTHORIZED",
+      "Unauthorized",
+      "No session found",
+    ),
+    [HttpStatusCodes.FORBIDDEN]: errorContent({
+      description: "Forbidden",
+      examples: {
+        requiredRole: {
+          summary: "Required role missing",
+          code: "FORBIDDEN",
+          details: "User does not have the required role",
+        },
+      },
+    }),
+    [HttpStatusCodes.UNPROCESSABLE_ENTITY]: genericErrorContent(
+      "UNPROCESSABLE_ENTITY",
+      "Unprocessable entity",
+    ),
+    [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
+      "TOO_MANY_REQUESTS",
+      "Too many requests",
+      "Too many requests have been made. Please try again later.",
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: serverErrorContent(),
+  },
+});
 
 export const banUser = createRoute({
   path: "/admin/ban-user",
@@ -202,5 +347,6 @@ export const unbanUser = createRoute({
   },
 });
 
+export type ListUsersRoute = typeof listUsers;
 export type BanUserRoute = typeof banUser;
 export type UnbanUserRoute = typeof unbanUser;
