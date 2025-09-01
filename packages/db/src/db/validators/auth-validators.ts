@@ -1,7 +1,10 @@
-import { createInsertSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
+import { session } from "../schemas/auth-schema";
 import { user } from "../schemas/user-schema";
+
+export const SessionSelectSchema = createSelectSchema(session);
 
 export const SignUpSchema = createInsertSchema(user, {
   email: z.email(),

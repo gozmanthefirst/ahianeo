@@ -55,6 +55,18 @@ export const userExamples = {
     banReason: null,
     banExpires: null,
   },
+  session: {
+    id: "aBCDEF0gHijkLM1NO2PqrsTuVwXyzaBc",
+    expiresAt: "2025-08-11T18:26:20.296Z",
+    token: authExamples.token,
+    createdAt: "2025-08-11T18:26:20.296Z",
+    updatedAt: "2025-08-11T18:26:20.296Z",
+    ipAddress: "192.168.1.1",
+    userAgent:
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+    userId: "aBCDEF0gHijkLM1NO2PqrsTuVwXyzaBc",
+    impersonatedBy: "aBCDEF0gHijkLM1NO2PqrsTuVwXyzaBc",
+  },
   createUserValErrs: {
     name: "Too small: expected string to have >=1 characters",
     email: "Invalid email address",

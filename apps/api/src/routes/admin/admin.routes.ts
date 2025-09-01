@@ -14,6 +14,7 @@ import {
   serverErrorContent,
   successContent,
 } from "@/utils/openapi-helpers";
+import { SessionSelectSchema } from "../../../../../packages/db/src/db/validators/auth-validators";
 
 const tags = ["Admin"];
 
@@ -92,7 +93,7 @@ export const listUsers = createRoute({
 
 export const listUserSessions = createRoute({
   path: "/admin/list-user-sessions",
-  method: "get",
+  method: "post",
   security: [
     {
       Bearer: [],
@@ -100,24 +101,26 @@ export const listUserSessions = createRoute({
   ],
   tags,
   request: {
-    query: ListUsersQuerySchema,
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            userId: z.string().min(1),
+          }),
+        },
+      },
+      description: "List user sessions",
+      required: true,
+    },
   },
   responses: {
     [HttpStatusCodes.OK]: successContent({
-      description: "Users retrieved",
-      schema: z.object({
-        users: z.array(UserSelectSchema),
-        total: z.number(),
-        limit: z.number().optional(),
-        offset: z.number().optional(),
-      }),
+      description: "User sessions retrieved",
+      schema: z.array(SessionSelectSchema),
       resObj: {
-        details: "Users retrieved successfully",
+        details: "User sessions retrieved successfully",
         data: {
-          users: [userExamples.user],
-          total: 223,
-          limit: 100,
-          offset: 0,
+          sessions: [userExamples.session],
         },
       },
     }),
@@ -128,8 +131,8 @@ export const listUserSessions = createRoute({
         validationError: {
           summary: "Validation error",
           code: "INVALID_DATA",
-          details: getErrDetailsFromErrFields(userExamples.listUsersValErrs),
-          fields: userExamples.listUsersValErrs,
+          details: getErrDetailsFromErrFields(userExamples.userIdValErrs),
+          fields: userExamples.userIdValErrs,
         },
       },
     }),
@@ -146,11 +149,17 @@ export const listUserSessions = createRoute({
           code: "FORBIDDEN",
           details: "User does not have the required role",
         },
+        superadmin: {
+          summary: "Cannot get superadmin info",
+          code: "FORBIDDEN",
+          details: "User cannot get superadmin info",
+        },
       },
     }),
-    [HttpStatusCodes.UNPROCESSABLE_ENTITY]: genericErrorContent(
-      "UNPROCESSABLE_ENTITY",
-      "Unprocessable entity",
+    [HttpStatusCodes.NOT_FOUND]: genericErrorContent(
+      "NOT_FOUND",
+      "User not found",
+      "User not found",
     ),
     [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
       "TOO_MANY_REQUESTS",
@@ -348,5 +357,6 @@ export const unbanUser = createRoute({
 });
 
 export type ListUsersRoute = typeof listUsers;
+export type ListUserSessionsRoute = typeof listUserSessions;
 export type BanUserRoute = typeof banUser;
 export type UnbanUserRoute = typeof unbanUser;
