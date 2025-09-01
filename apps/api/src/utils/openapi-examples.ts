@@ -89,6 +89,9 @@ export const userExamples = {
     banReason: "Too small: expected string to have >=1 characters",
     banExpiresIn: "Too small: expected number to be >=3600",
   },
+  sessionTokenValErrs: {
+    sessionToken: "Too small: expected string to have >=1 characters",
+  },
   userIdValErrs: {
     userId: "Too small: expected string to have >=1 characters",
   },

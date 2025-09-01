@@ -2,10 +2,11 @@ import { APIError } from "better-auth/api";
 
 import { auth } from "@/lib/auth";
 import type { AppRouteHandler, ErrorStatusCodes } from "@/lib/types";
-import { getUserById } from "@/queries/user-queries";
+import { getSessionByToken, getUserById } from "@/queries/user-queries";
 import type {
   ListUserSessionsRoute,
   ListUsersRoute,
+  RevokeUserSessionRoute,
 } from "@/routes/admin/admin.routes";
 import { errorResponse, successResponse } from "@/utils/api-response";
 import HttpStatusCodes from "@/utils/http-status-codes";
@@ -91,6 +92,72 @@ export const listUserSessions: AppRouteHandler<ListUserSessionsRoute> = async (
           error.body?.message ?? error.message,
         ),
         error.statusCode as ErrorStatusCodes<typeof listUserSessions>,
+      );
+    }
+
+    throw error;
+  }
+};
+
+export const revokeUserSession: AppRouteHandler<
+  RevokeUserSessionRoute
+> = async (c) => {
+  try {
+    const user = c.get("user");
+    const data = c.req.valid("json");
+
+    const sessionToBeRevoked = await getSessionByToken(data.sessionToken);
+
+    if (!sessionToBeRevoked) {
+      return c.json(
+        errorResponse("NOT_FOUND", "Session not found"),
+        HttpStatusCodes.NOT_FOUND,
+      );
+    }
+
+    const userToRevokeSession = await getUserById(sessionToBeRevoked.userId);
+
+    if (!userToRevokeSession) {
+      return c.json(
+        errorResponse("NOT_FOUND", "User not found"),
+        HttpStatusCodes.NOT_FOUND,
+      );
+    }
+
+    if (
+      userToRevokeSession.role === "superadmin" &&
+      user.role !== "superadmin"
+    ) {
+      return c.json(
+        errorResponse("FORBIDDEN", "User cannot revoke superadmin session"),
+        HttpStatusCodes.FORBIDDEN,
+      );
+    }
+
+    if (userToRevokeSession.role === "admin" && user.role === "admin") {
+      return c.json(
+        errorResponse("FORBIDDEN", "Admin cannot revoke fellow admin session"),
+        HttpStatusCodes.FORBIDDEN,
+      );
+    }
+
+    const response = await auth.api.revokeUserSession({
+      body: data,
+      headers: c.req.raw.headers,
+    });
+
+    return c.json(
+      successResponse(response, "User session revoked successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    if (error instanceof APIError) {
+      return c.json(
+        errorResponse(
+          error.body?.code ?? "AUTH_ERROR",
+          error.body?.message ?? error.message,
+        ),
+        error.statusCode as ErrorStatusCodes<typeof revokeUserSession>,
       );
     }
 

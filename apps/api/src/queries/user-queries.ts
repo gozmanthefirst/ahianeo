@@ -1,4 +1,5 @@
 import db, { eq } from "@repo/db";
+import { session } from "@repo/db/schemas/auth-schema";
 import { user } from "@repo/db/schemas/user-schema";
 
 /**
@@ -33,4 +34,17 @@ export const getUserByEmail = async (email: string) => {
     .limit(1);
 
   return foundUser || null;
+};
+
+/**
+ * Returns the session with the given token, or null if not found.
+ */
+export const getSessionByToken = async (sessionToken: string) => {
+  const [foundSession] = await db
+    .select()
+    .from(session)
+    .where(eq(session.token, sessionToken))
+    .limit(1);
+
+  return foundSession || null;
 };

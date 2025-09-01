@@ -124,7 +124,6 @@ export const listUserSessions = createRoute({
         },
       },
     }),
-
     [HttpStatusCodes.BAD_REQUEST]: errorContent({
       description: "Invalid request data",
       examples: {
@@ -161,6 +160,102 @@ export const listUserSessions = createRoute({
       "User not found",
       "User not found",
     ),
+    [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
+      "TOO_MANY_REQUESTS",
+      "Too many requests",
+      "Too many requests have been made. Please try again later.",
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: serverErrorContent(),
+  },
+});
+
+export const revokeUserSession = createRoute({
+  path: "/admin/revoke-user-session",
+  method: "post",
+  security: [
+    {
+      Bearer: [],
+    },
+  ],
+  tags,
+  description: "Revoke a user session",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            sessionToken: z.string().min(1),
+          }),
+        },
+      },
+      description: "Revoke user session",
+      required: true,
+    },
+  },
+  responses: {
+    [HttpStatusCodes.OK]: successContent({
+      description: "User session revoked",
+      schema: z.object({
+        success: z.boolean(),
+      }),
+      resObj: {
+        details: "User session revoked successfully",
+        data: {
+          success: true,
+        },
+      },
+    }),
+    [HttpStatusCodes.BAD_REQUEST]: errorContent({
+      description: "Invalid request data",
+      examples: {
+        validationError: {
+          summary: "Validation error",
+          code: "INVALID_DATA",
+          details: getErrDetailsFromErrFields(userExamples.sessionTokenValErrs),
+          fields: userExamples.sessionTokenValErrs,
+        },
+      },
+    }),
+    [HttpStatusCodes.UNAUTHORIZED]: genericErrorContent(
+      "UNAUTHORIZED",
+      "Unauthorized",
+      "No session found",
+    ),
+    [HttpStatusCodes.FORBIDDEN]: errorContent({
+      description: "Forbidden",
+      examples: {
+        requiredRole: {
+          summary: "Required role missing",
+          code: "FORBIDDEN",
+          details: "User does not have the required role",
+        },
+        cannotRevokeSuperadmin: {
+          summary: "Cannot revoke superadmin session",
+          code: "FORBIDDEN",
+          details: "User cannot revoke superadmin session",
+        },
+        adminCannotRevokeAdmin: {
+          summary: "Admin cannot revoke fellow admin session",
+          code: "FORBIDDEN",
+          details: "Admin cannot revoke fellow admin session",
+        },
+      },
+    }),
+    [HttpStatusCodes.NOT_FOUND]: errorContent({
+      description: "Not found",
+      examples: {
+        sessionNotFound: {
+          summary: "Session not found",
+          code: "SESSION_NOT_FOUND",
+          details: "Session not found",
+        },
+        userNotFound: {
+          summary: "User not found",
+          code: "USER_NOT_FOUND",
+          details: "User not found",
+        },
+      },
+    }),
     [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
       "TOO_MANY_REQUESTS",
       "Too many requests",
@@ -358,5 +453,6 @@ export const unbanUser = createRoute({
 
 export type ListUsersRoute = typeof listUsers;
 export type ListUserSessionsRoute = typeof listUserSessions;
+export type RevokeUserSessionRoute = typeof revokeUserSession;
 export type BanUserRoute = typeof banUser;
 export type UnbanUserRoute = typeof unbanUser;
