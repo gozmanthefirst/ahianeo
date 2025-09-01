@@ -1,4 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
+import { SessionSelectSchema } from "@repo/db/validators/auth-validators";
 import {
   BanUserSchema,
   UserSelectSchema,
@@ -14,7 +15,6 @@ import {
   serverErrorContent,
   successContent,
 } from "@/utils/openapi-helpers";
-import { SessionSelectSchema } from "../../../../../packages/db/src/db/validators/auth-validators";
 
 const tags = ["Admin"];
 
@@ -27,6 +27,7 @@ export const listUsers = createRoute({
     },
   ],
   tags,
+  description: "List all users",
   request: {
     query: ListUsersQuerySchema,
   },
@@ -100,6 +101,7 @@ export const listUserSessions = createRoute({
     },
   ],
   tags,
+  description: "List user sessions",
   request: {
     body: {
       content: {
@@ -109,7 +111,6 @@ export const listUserSessions = createRoute({
           }),
         },
       },
-      description: "List user sessions",
       required: true,
     },
   },
@@ -188,7 +189,6 @@ export const revokeUserSession = createRoute({
           }),
         },
       },
-      description: "Revoke user session",
       required: true,
     },
   },
@@ -359,6 +359,7 @@ export const banUser = createRoute({
     },
   ],
   tags,
+  description: "Ban a user",
   request: {
     body: {
       content: {
@@ -366,7 +367,6 @@ export const banUser = createRoute({
           schema: BanUserSchema,
         },
       },
-      description: "Ban a user",
       required: true,
     },
   },
@@ -451,6 +451,7 @@ export const unbanUser = createRoute({
     },
   ],
   tags,
+  description: "Unban a user",
   request: {
     body: {
       content: {
@@ -460,7 +461,6 @@ export const unbanUser = createRoute({
           }),
         },
       },
-      description: "Unban a user",
       required: true,
     },
   },

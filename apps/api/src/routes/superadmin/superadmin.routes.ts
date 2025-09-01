@@ -25,6 +25,7 @@ export const createUser = createRoute({
     },
   ],
   tags,
+  description: "Create a new user",
   request: {
     body: {
       content: {
@@ -32,7 +33,6 @@ export const createUser = createRoute({
           schema: CreateUserSchema,
         },
       },
-      description: "Create a new user",
       required: true,
     },
   },
@@ -93,6 +93,7 @@ export const deleteUser = createRoute({
     },
   ],
   tags,
+  description: "Delete a user. Cannot be undone.",
   request: {
     body: {
       content: {
@@ -102,7 +103,6 @@ export const deleteUser = createRoute({
           }),
         },
       },
-      description: "Delete a user. Cannot be undone.",
       required: true,
     },
   },
