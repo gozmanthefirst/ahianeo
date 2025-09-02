@@ -1,9 +1,6 @@
-import { timestamp } from "drizzle-orm/pg-core";
+import { timestamp } from "drizzle-orm/mysql-core";
 
 export const timestamps = {
-  createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp({ withTimezone: true })
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 };
