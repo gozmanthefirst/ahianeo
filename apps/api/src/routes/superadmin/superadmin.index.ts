@@ -11,6 +11,7 @@ superadminRouter
 
 superadminRouter
   .openapi(superadminRoutes.createUser, superadminHandlers.createUser)
+  .openapi(superadminRoutes.changeUserRole, superadminHandlers.changeUserRole)
   .openapi(superadminRoutes.deleteUser, superadminHandlers.deleteUser);
 
 export default superadminRouter;

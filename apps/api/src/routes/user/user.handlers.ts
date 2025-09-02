@@ -9,12 +9,10 @@ import type { GetUserRoute } from "./user.routes";
 
 export const getUser: AppRouteHandler<GetUserRoute> = async (c) => {
   try {
-    const response = await auth.api.getSession({
-      headers: c.req.raw.headers,
-    });
+    const user = c.get("user");
 
     return c.json(
-      successResponse(response?.user, "User retrieved successfully"),
+      successResponse(user, "User retrieved successfully"),
       HttpStatusCodes.OK,
     );
   } catch (error) {
