@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "db:up": "docker compose up -d",
-    "db:down": "docker compose down",
+    "db:down": "docker compose down -v",
     "db:mysql": "docker exec -it ahianeo-mysql mysql -u user -p ahianeo",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
