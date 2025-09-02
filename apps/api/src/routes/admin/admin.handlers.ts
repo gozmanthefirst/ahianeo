@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import type { AppRouteHandler, ErrorStatusCodes } from "@/lib/types";
 import { getSessionByToken, getUserById } from "@/queries/user-queries";
 import type {
+  ChangeUserPwdRoute,
   ListUserSessionsRoute,
   ListUsersRoute,
   RevokeUserSessionRoute,
@@ -227,6 +228,62 @@ export const revokeUserSessions: AppRouteHandler<
           error.body?.message ?? error.message,
         ),
         error.statusCode as ErrorStatusCodes<typeof revokeUserSessions>,
+      );
+    }
+
+    throw error;
+  }
+};
+
+export const changeUserPwd: AppRouteHandler<ChangeUserPwdRoute> = async (c) => {
+  try {
+    const user = c.get("user");
+    const data = c.req.valid("json");
+
+    const userToChangePwd = await getUserById(data.userId);
+
+    if (!userToChangePwd) {
+      return c.json(
+        errorResponse("NOT_FOUND", "User not found"),
+        HttpStatusCodes.NOT_FOUND,
+      );
+    }
+
+    if (userToChangePwd.role === "superadmin" && user.role !== "superadmin") {
+      return c.json(
+        errorResponse("FORBIDDEN", "User cannot change superadmin password"),
+        HttpStatusCodes.FORBIDDEN,
+      );
+    }
+
+    if (
+      userToChangePwd.role === "admin" &&
+      user.role === "admin" &&
+      userToChangePwd.id !== user.id
+    ) {
+      return c.json(
+        errorResponse("FORBIDDEN", "Admin cannot change fellow admin password"),
+        HttpStatusCodes.FORBIDDEN,
+      );
+    }
+
+    const response = await auth.api.setUserPassword({
+      body: data,
+      headers: c.req.raw.headers,
+    });
+
+    return c.json(
+      successResponse(response, "User password changed successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    if (error instanceof APIError) {
+      return c.json(
+        errorResponse(
+          error.body?.code ?? "AUTH_ERROR",
+          error.body?.message ?? error.message,
+        ),
+        error.statusCode as ErrorStatusCodes<typeof changeUserPwd>,
       );
     }
 

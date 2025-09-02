@@ -7,7 +7,7 @@ import {
 
 import { ListUsersQuerySchema } from "@/lib/schemas";
 import HttpStatusCodes from "@/utils/http-status-codes";
-import { userExamples } from "@/utils/openapi-examples";
+import { authExamples, userExamples } from "@/utils/openapi-examples";
 import {
   errorContent,
   genericErrorContent,
@@ -350,6 +350,98 @@ export const revokeUserSessions = createRoute({
   },
 });
 
+export const changeUserPwd = createRoute({
+  path: "/admin/change-user-password",
+  method: "post",
+  security: [
+    {
+      Bearer: [],
+    },
+  ],
+  tags,
+  description: "Change the password of a user",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            userId: z.string().min(1),
+            newPassword: z.string().min(8),
+          }),
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    [HttpStatusCodes.OK]: successContent({
+      description: "User password changed",
+      schema: z.object({
+        status: z.boolean(),
+      }),
+      resObj: {
+        details: "User password changed successfully",
+        data: {
+          status: true,
+        },
+      },
+    }),
+    [HttpStatusCodes.BAD_REQUEST]: errorContent({
+      description: "Invalid request data",
+      examples: {
+        validationError: {
+          summary: "Validation error",
+          code: "INVALID_DATA",
+          details: getErrDetailsFromErrFields({
+            ...userExamples.userIdValErrs,
+            newPassword: authExamples.changePwdValErrs.newPassword,
+          }),
+          fields: {
+            ...userExamples.userIdValErrs,
+            newPassword: authExamples.changePwdValErrs.newPassword,
+          },
+        },
+      },
+    }),
+    [HttpStatusCodes.UNAUTHORIZED]: genericErrorContent(
+      "UNAUTHORIZED",
+      "Unauthorized",
+      "No session found",
+    ),
+    [HttpStatusCodes.FORBIDDEN]: errorContent({
+      description: "Forbidden",
+      examples: {
+        requiredRole: {
+          summary: "Required role missing",
+          code: "FORBIDDEN",
+          details: "User does not have the required role",
+        },
+        cannotChangeSuperadminPwd: {
+          summary: "Cannot change superadmin password",
+          code: "FORBIDDEN",
+          details: "User cannot change superadmin password",
+        },
+        adminCannotChangeAdminPwd: {
+          summary: "Admin cannot change fellow admin password",
+          code: "FORBIDDEN",
+          details: "Admin cannot change fellow admin password",
+        },
+      },
+    }),
+    [HttpStatusCodes.NOT_FOUND]: genericErrorContent(
+      "NOT_FOUND",
+      "User not found",
+      "User not found",
+    ),
+    [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
+      "TOO_MANY_REQUESTS",
+      "Too many requests",
+      "Too many requests have been made. Please try again later.",
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: serverErrorContent(),
+  },
+});
+
 export const banUser = createRoute({
   path: "/admin/ban-user",
   method: "post",
@@ -540,5 +632,6 @@ export type ListUsersRoute = typeof listUsers;
 export type ListUserSessionsRoute = typeof listUserSessions;
 export type RevokeUserSessionRoute = typeof revokeUserSession;
 export type RevokeUserSessionsRoute = typeof revokeUserSessions;
+export type ChangeUserPwdRoute = typeof changeUserPwd;
 export type BanUserRoute = typeof banUser;
 export type UnbanUserRoute = typeof unbanUser;

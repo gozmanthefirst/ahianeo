@@ -150,15 +150,15 @@ export const changeUserRole = createRoute({
           code: "FORBIDDEN",
           details: "User does not have the required role",
         },
-        cannotChangeSuperadminRole: {
-          summary: "Cannot change superadmin role",
-          code: "FORBIDDEN",
-          details: "User cannot change the role of a superadmin",
-        },
         cannotChangeSelfRole: {
           summary: "Cannot change self role",
           code: "FORBIDDEN",
           details: "User cannot change their own role",
+        },
+        cannotChangeSuperadminRole: {
+          summary: "Cannot change superadmin role",
+          code: "FORBIDDEN",
+          details: "User cannot change the role of a superadmin",
         },
       },
     }),
@@ -166,10 +166,6 @@ export const changeUserRole = createRoute({
       "NOT_FOUND",
       "User not found",
       "User not found",
-    ),
-    [HttpStatusCodes.UNPROCESSABLE_ENTITY]: genericErrorContent(
-      "UNPROCESSABLE_ENTITY",
-      "Unprocessable entity",
     ),
     [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
       "TOO_MANY_REQUESTS",
@@ -255,10 +251,6 @@ export const deleteUser = createRoute({
       "NOT_FOUND",
       "User not found",
       "User not found",
-    ),
-    [HttpStatusCodes.UNPROCESSABLE_ENTITY]: genericErrorContent(
-      "UNPROCESSABLE_ENTITY",
-      "Unprocessable entity",
     ),
     [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
       "TOO_MANY_REQUESTS",
