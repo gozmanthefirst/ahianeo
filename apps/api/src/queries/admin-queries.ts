@@ -1,11 +1,11 @@
-import db, { eq } from "@repo/db";
-import { user } from "@repo/db/schemas/user-schema";
+import db from "@repo/db";
 import type { User } from "@repo/db/validators/user-validators";
 
 import { auth } from "@/lib/auth";
 import { sendAccountCreatedEmail } from "@/lib/email";
 import env from "@/lib/env";
 import type { Role } from "@/lib/types";
+import { getUserByEmail } from "@/queries/user-queries";
 import { generatePassword } from "@/utils/strings";
 
 export const createUser = async (c: {
@@ -14,10 +14,7 @@ export const createUser = async (c: {
   role: Role;
 }): Promise<User> => {
   // Check if the user with the email already exists
-  const [existingUser] = await db
-    .select()
-    .from(user)
-    .where(eq(user.email, c.email));
+  const existingUser = await getUserByEmail(c.email);
 
   if (existingUser) {
     return existingUser;
@@ -53,10 +50,9 @@ export const createUser = async (c: {
 };
 
 export const createSuperadmin = async () => {
-  const [superadmin] = await db
-    .select()
-    .from(user)
-    .where(eq(user.role, "superadmin"));
+  const superadmin = await db.query.user.findFirst({
+    where: (user, { eq }) => eq(user.role, "superadmin"),
+  });
 
   if (!superadmin) {
     await createUser({

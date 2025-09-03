@@ -1,50 +1,34 @@
-import db, { eq } from "@repo/db";
-import { session } from "@repo/db/schemas/auth-schema";
-import { user } from "@repo/db/schemas/user-schema";
-
-/**
- * Returns true if a user with the given ID exists.
- */
-export const userExists = async (userId: string): Promise<boolean> => {
-  const rows = await db.select().from(user).where(eq(user.id, userId)).limit(1);
-  return rows.length === 1;
-};
+import db from "@repo/db";
 
 /**
  * Returns the user with the given ID, or null if not found.
  */
 export const getUserById = async (userId: string) => {
-  const [foundUser] = await db
-    .select()
-    .from(user)
-    .where(eq(user.id, userId))
-    .limit(1);
+  const user = await db.query.user.findFirst({
+    where: (user, { eq }) => eq(user.id, userId),
+  });
 
-  return foundUser || null;
+  return user || null;
 };
 
 /**
  * Returns the user with the given email, or null if not found.
  */
 export const getUserByEmail = async (email: string) => {
-  const [foundUser] = await db
-    .select()
-    .from(user)
-    .where(eq(user.email, email))
-    .limit(1);
+  const user = await db.query.user.findFirst({
+    where: (user, { eq }) => eq(user.email, email),
+  });
 
-  return foundUser || null;
+  return user || null;
 };
 
 /**
  * Returns the session with the given token, or null if not found.
  */
 export const getSessionByToken = async (sessionToken: string) => {
-  const [foundSession] = await db
-    .select()
-    .from(session)
-    .where(eq(session.token, sessionToken))
-    .limit(1);
+  const session = await db.query.session.findFirst({
+    where: (session, { eq }) => eq(session.token, sessionToken),
+  });
 
-  return foundSession || null;
+  return session || null;
 };
