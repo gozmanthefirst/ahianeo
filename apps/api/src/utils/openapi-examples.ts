@@ -72,18 +72,6 @@ export const userExamples = {
     email: "Invalid email address",
     role: 'Invalid option: expected one of "user"|"admin"',
   },
-  listUsersValErrs: {
-    searchValue: "Too small: expected string to have >=1 characters",
-    searchField: 'Invalid option: expected one of "name"|"email"',
-    searchOperator:
-      'Invalid option: expected one of "contains"|"starts_with"|"ends_with"',
-    limit: "Too small: expected number to be >=1",
-    offset: "Invalid input: expected number, received NaN",
-    sortBy: "Too small: expected string to have >=1 characters",
-    sortDirection: 'Invalid option: expected one of "asc"|"desc"',
-    filterOperator:
-      'Invalid option: expected one of "eq"|"ne"|"gt"|"gte"|"lt"|"lte"|"contains"',
-  },
   banUserValErrs: {
     userId: "Too small: expected string to have >=1 characters",
     banReason: "Too small: expected string to have >=1 characters",
@@ -98,5 +86,28 @@ export const userExamples = {
   updateUserValErrs: {
     name: "Too small: expected string to have >=1 characters",
     image: "Invalid URL",
+  },
+};
+
+export const categoriesExamples = {
+  category: {
+    id: "123e4567-e89b-12d3-a456-426614174000",
+    name: "Category",
+    slug: "category",
+    createdAt: "2025-08-11T18:26:20.296Z",
+    updatedAt: "2025-08-11T18:26:20.296Z",
+  },
+  product: {
+    id: "123e4567-e89b-12d3-a456-426614174000",
+    name: "Product",
+    slug: "product",
+    description: "Product description",
+    price: "19.99",
+    stockQuantity: 100,
+    sizes: ["S", "M", "L", "XL"],
+    colors: ["Red", "Green", "Blue"],
+    createdBy: "aBCDEF0gHijkLM1NO2PqrsTuVwXyzaBc",
+    createdAt: "2025-08-11T18:26:20.296Z",
+    updatedAt: "2025-08-11T18:26:20.296Z",
   },
 };
