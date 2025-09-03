@@ -36,7 +36,10 @@
     "db:down": {
       "cache": false
     },
-    "db:mysql": {
+    "db:delete": {
+      "cache": false
+    },
+    "db:psql": {
       "cache": false,
       "persistent": true
     },

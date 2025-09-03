@@ -1,19 +1,18 @@
 name: ahianeo-db
 
 services:
-  mysql:
-    image: mysql:8.4.6
-    container_name: ahianeo-mysql
+  postgres:
+    image: postgres:17.5
+    container_name: ahianeo-pg
     ports:
-      - "3306:3306"
+      - "5433:5432"
     environment:
-      MYSQL_DATABASE: ahianeo
-      MYSQL_USER: user
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: rootsecret
+      POSTGRES_DB: ahianeo
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: secret
     volumes:
-      - mysql-data:/var/lib/mysql
+      - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
 
 volumes:
-  mysql-data:
+  pgdata:

@@ -10,8 +10,9 @@
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "db:up": "docker compose up -d",
-    "db:down": "docker compose down -v",
-    "db:mysql": "docker exec -it ahianeo-mysql mysql -u user -p ahianeo",
+    "db:down": "docker compose down",
+    "db:delete": "docker compose down -v",
+    "db:psql": "docker exec -it ahianeo-pg psql -U user -d ahianeo",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
@@ -20,12 +21,13 @@
     "drizzle-orm": "^0.44.5",
     "drizzle-seed": "^0.3.1",
     "drizzle-zod": "^0.8.3",
-    "mysql2": "^3.14.3",
+    "pg": "^8.16.3",
     "zod": "^4.1.3"
   },
   "devDependencies": {
     "@repo/tsconfig": "workspace:*",
     "@types/bun": "latest",
+    "@types/pg": "^8.15.5",
     "drizzle-kit": "^0.31.4"
   }
 }

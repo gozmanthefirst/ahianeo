@@ -8,7 +8,7 @@ import { ac, admin, superadmin, user } from "@/lib/permissions";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
-    provider: "mysql",
+    provider: "pg",
   }),
   basePath: "/api/better-auth",
 
