@@ -1,6 +1,9 @@
 import { drizzle } from "drizzle-orm/mysql2";
 
 import * as authSchema from "./db/schemas/auth-schema";
+import * as cartSchema from "./db/schemas/cart-schema";
+import * as orderSchema from "./db/schemas/order-schema";
+import * as productSchema from "./db/schemas/product-schema";
 import * as userSchema from "./db/schemas/user-schema";
 import env from "./lib/env";
 
@@ -12,6 +15,9 @@ const connection = drizzle(env.DATABASE_URL, {
   schema: {
     ...authSchema,
     ...userSchema,
+    ...productSchema,
+    ...cartSchema,
+    ...orderSchema,
   },
   mode: "default",
   casing: "snake_case",
