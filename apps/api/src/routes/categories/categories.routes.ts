@@ -1,11 +1,12 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import {
   CategorySelectSchema,
+  CreateCategorySchema,
   ProductSelectSchema,
 } from "@repo/db/validators/product-validators";
 
 import HttpStatusCodes from "@/utils/http-status-codes";
-import { authExamples, categoriesExamples } from "@/utils/openapi-examples";
+import { authExamples, productsExamples } from "@/utils/openapi-examples";
 import {
   createIdUUIDParamsSchema,
   errorContent,
@@ -28,7 +29,7 @@ export const getAllCategories = createRoute({
       schema: z.array(CategorySelectSchema),
       resObj: {
         details: "All categories retrieved successfully",
-        data: [categoriesExamples.category],
+        data: [productsExamples.category],
       },
     }),
     [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
@@ -58,8 +59,8 @@ export const getCategory = createRoute({
       resObj: {
         details: "Category retrieved successfully",
         data: {
-          category: categoriesExamples.category,
-          products: [categoriesExamples.product],
+          category: productsExamples.category,
+          products: [productsExamples.product],
         },
       },
     }),
@@ -88,5 +89,76 @@ export const getCategory = createRoute({
   },
 });
 
+export const createCategory = createRoute({
+  path: "/categories",
+  method: "post",
+  security: [
+    {
+      Bearer: [],
+    },
+  ],
+  tags,
+  description: "Create a new category",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: CreateCategorySchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    [HttpStatusCodes.CREATED]: successContent({
+      description: "Category created",
+      schema: CategorySelectSchema,
+      resObj: {
+        details: "Category created successfully",
+        data: {
+          ...productsExamples.category,
+          name: "New category",
+          slug: "new-category",
+        },
+      },
+    }),
+    [HttpStatusCodes.BAD_REQUEST]: errorContent({
+      description: "Invalid request data",
+      examples: {
+        validationError: {
+          summary: "Validation error",
+          code: "INVALID_DATA",
+          details: getErrDetailsFromErrFields(
+            productsExamples.createCategoryValErrs,
+          ),
+          fields: productsExamples.createCategoryValErrs,
+        },
+      },
+    }),
+    [HttpStatusCodes.UNAUTHORIZED]: genericErrorContent(
+      "UNAUTHORIZED",
+      "Unauthorized",
+      "No session found",
+    ),
+    [HttpStatusCodes.FORBIDDEN]: errorContent({
+      description: "Forbidden",
+      examples: {
+        requiredRole: {
+          summary: "Required role missing",
+          code: "FORBIDDEN",
+          details: "User does not have the required role",
+        },
+      },
+    }),
+    [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
+      "TOO_MANY_REQUESTS",
+      "Too many requests",
+      "Too many requests have been made. Please try again later.",
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: serverErrorContent(),
+  },
+});
+
 export type GetAllCategoriesRoute = typeof getAllCategories;
 export type GetCategoryRoute = typeof getCategory;
+export type CreateCategoryRoute = typeof createCategory;

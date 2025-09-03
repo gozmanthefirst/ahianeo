@@ -89,7 +89,7 @@ export const userExamples = {
   },
 };
 
-export const categoriesExamples = {
+export const productsExamples = {
   category: {
     id: "123e4567-e89b-12d3-a456-426614174000",
     name: "Category",
@@ -109,5 +109,8 @@ export const categoriesExamples = {
     createdBy: "aBCDEF0gHijkLM1NO2PqrsTuVwXyzaBc",
     createdAt: "2025-08-11T18:26:20.296Z",
     updatedAt: "2025-08-11T18:26:20.296Z",
+  },
+  createCategoryValErrs: {
+    name: "Too small: expected string to have >=1 characters",
   },
 };
