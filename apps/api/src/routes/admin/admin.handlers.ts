@@ -16,27 +16,13 @@ import type { BanUserRoute, UnbanUserRoute } from "./admin.routes";
 
 export const listUsers: AppRouteHandler<ListUsersRoute> = async (c) => {
   try {
-    const data = c.req.valid("query");
-
-    const dataOffset = ((data.currentPage ?? 1) - 1) * (data.pageSize ?? 100);
-
     const result = await auth.api.listUsers({
-      query: { ...data, limit: data.pageSize ?? 100, offset: dataOffset },
+      query: { limit: 999999, offset: 0 },
       headers: c.req.raw.headers,
     });
 
-    const totalPages = Math.ceil(result.total / (data.pageSize ?? 100));
-
-    const usersWithPagination = {
-      users: result.users,
-      total: result.total,
-      pageSize: data.pageSize ?? 100,
-      currentPage: data.currentPage ?? 1,
-      totalPages,
-    };
-
     return c.json(
-      successResponse(usersWithPagination, "Users retrieved successfully"),
+      successResponse(result.users, "Users retrieved successfully"),
       HttpStatusCodes.OK,
     );
   } catch (error) {

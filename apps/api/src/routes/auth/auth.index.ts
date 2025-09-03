@@ -5,6 +5,7 @@ import * as authRoutes from "@/routes/auth/auth.routes";
 
 const authRouter = createRouter();
 
+// Public routes
 authRouter
   .openapi(authRoutes.signUp, authHandlers.signUp)
   .openapi(authRoutes.verifyEmail, authHandlers.verifyEmail)
@@ -13,8 +14,8 @@ authRouter
   .openapi(authRoutes.reqPwdResetEmail, authHandlers.reqPwdResetEmail)
   .openapi(authRoutes.resetPwd, authHandlers.resetPwd);
 
-authRouter.use("/auth/change-password", authMiddleware);
-authRouter.use("/auth/sign-out", authMiddleware);
+// Apply authentication middleware
+authRouter.use("/auth/*", authMiddleware);
 
 // Protected routes
 authRouter

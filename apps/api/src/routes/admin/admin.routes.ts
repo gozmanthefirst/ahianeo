@@ -5,7 +5,6 @@ import {
   UserSelectSchema,
 } from "@repo/db/validators/user-validators";
 
-import { ListUsersQuerySchema } from "@/lib/schemas";
 import HttpStatusCodes from "@/utils/http-status-codes";
 import { authExamples, userExamples } from "@/utils/openapi-examples";
 import {
@@ -28,40 +27,13 @@ export const listUsers = createRoute({
   ],
   tags,
   description: "List all users",
-  request: {
-    query: ListUsersQuerySchema,
-  },
   responses: {
     [HttpStatusCodes.OK]: successContent({
       description: "Users retrieved",
-      schema: z.object({
-        users: z.array(UserSelectSchema),
-        total: z.number(),
-        pageSize: z.number(),
-        currentPage: z.number(),
-        totalPages: z.number(),
-      }),
+      schema: z.array(UserSelectSchema),
       resObj: {
         details: "Users retrieved successfully",
-        data: {
-          users: [userExamples.user],
-          total: 223,
-          pageSize: 100,
-          currentPage: 1,
-          totalPages: 3,
-        },
-      },
-    }),
-
-    [HttpStatusCodes.BAD_REQUEST]: errorContent({
-      description: "Invalid request data",
-      examples: {
-        validationError: {
-          summary: "Validation error",
-          code: "INVALID_DATA",
-          details: getErrDetailsFromErrFields(userExamples.listUsersValErrs),
-          fields: userExamples.listUsersValErrs,
-        },
+        data: [userExamples.user],
       },
     }),
     [HttpStatusCodes.UNAUTHORIZED]: genericErrorContent(
@@ -79,10 +51,6 @@ export const listUsers = createRoute({
         },
       },
     }),
-    [HttpStatusCodes.UNPROCESSABLE_ENTITY]: genericErrorContent(
-      "UNPROCESSABLE_ENTITY",
-      "Unprocessable entity",
-    ),
     [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
       "TOO_MANY_REQUESTS",
       "Too many requests",
