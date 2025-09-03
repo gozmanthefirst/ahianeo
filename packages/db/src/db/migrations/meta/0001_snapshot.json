@@ -1,6 +1,6 @@
 {
-  "id": "522a6c4e-4e68-499f-9f0b-439af22ab191",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "45a2a01f-514d-49db-a10f-6e9887b747ca",
+  "prevId": "522a6c4e-4e68-499f-9f0b-439af22ab191",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -697,55 +697,6 @@
           "tableFrom": "product_category",
           "tableTo": "category",
           "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.product_image": {
-      "name": "product_image",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "product_id": {
-          "name": "product_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "image_url": {
-          "name": "image_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "product_image_product_id_product_id_fk": {
-          "name": "product_image_product_id_product_id_fk",
-          "tableFrom": "product_image",
-          "tableTo": "product",
-          "columnsFrom": ["product_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
