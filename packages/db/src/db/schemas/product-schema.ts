@@ -1,62 +1,71 @@
+import { relations } from "drizzle-orm";
 import {
-  decimal,
-  int,
-  json,
-  mysqlTable,
+  integer,
+  jsonb,
+  numeric,
+  pgTable,
   text,
-  timestamp,
-  varchar,
-} from "drizzle-orm/mysql-core";
+  uuid,
+} from "drizzle-orm/pg-core";
 
 import { timestamps } from "../../lib/helpers";
+import { cartItem } from "./cart-schema";
+import { orderItem } from "./order-schema";
 import { user } from "./user-schema";
 
-export const product = mysqlTable("product", {
-  id: varchar("id", { length: 36 })
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
+export const product = pgTable("product", {
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  slug: text("slug").notNull().unique(),
   description: text("description"),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  stockQuantity: int("stock_quantity").default(0),
-  sizes: json("sizes").$type<string[]>().default([]),
-  colors: json("colors").$type<string[]>().default([]),
-  createdBy: varchar("created_by", { length: 36 }).references(() => user.id, {
+  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+  stockQuantity: integer("stock_quantity").default(0),
+  sizes: jsonb("sizes").$type<string[]>().default([]),
+  colors: jsonb("colors").$type<string[]>().default([]),
+  createdBy: text("created_by").references(() => user.id, {
     onDelete: "set null",
   }),
   ...timestamps,
 });
+export const productRelations = relations(product, ({ one, many }) => ({
+  creator: one(user, {
+    fields: [product.createdBy],
+    references: [user.id],
+  }),
+  cartItems: many(cartItem),
+  productCategories: many(productCategory),
+  orderItems: many(orderItem),
+}));
 
-export const category = mysqlTable("category", {
-  id: varchar("id", { length: 36 })
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  name: varchar("name", { length: 255 }).notNull(),
-  slug: varchar("slug", { length: 255 }).notNull().unique(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+export const category = pgTable("category", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  ...timestamps,
 });
+export const categoryRelations = relations(category, ({ many }) => ({
+  productCategories: many(productCategory),
+}));
 
-export const productImage = mysqlTable("product_image", {
-  id: varchar("id", { length: 36 })
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  productId: varchar("product_id", { length: 36 })
+export const productCategory = pgTable("product_category", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  productId: uuid("product_id")
     .notNull()
     .references(() => product.id, { onDelete: "cascade" }),
-  imageUrl: text("image_url").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const productCategory = mysqlTable("product_category", {
-  id: varchar("id", { length: 36 })
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  productId: varchar("product_id", { length: 36 })
-    .notNull()
-    .references(() => product.id, { onDelete: "cascade" }),
-  categoryId: varchar("category_id", { length: 36 })
+  categoryId: uuid("category_id")
     .notNull()
     .references(() => category.id, { onDelete: "cascade" }),
 });
+export const productCategoryRelations = relations(
+  productCategory,
+  ({ one }) => ({
+    product: one(product, {
+      fields: [productCategory.productId],
+      references: [product.id],
+    }),
+    category: one(category, {
+      fields: [productCategory.categoryId],
+      references: [category.id],
+    }),
+  }),
+);

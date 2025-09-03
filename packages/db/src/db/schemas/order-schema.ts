@@ -1,41 +1,55 @@
+import { relations } from "drizzle-orm";
 import {
-  decimal,
-  int,
-  mysqlTable,
+  integer,
+  numeric,
+  pgTable,
   text,
   timestamp,
-  varchar,
-} from "drizzle-orm/mysql-core";
+  uuid,
+} from "drizzle-orm/pg-core";
 
 import { timestamps } from "../../lib/helpers";
 import { product } from "./product-schema";
 import { user } from "./user-schema";
 
-export const order = mysqlTable("order", {
-  id: varchar("id", { length: 36 })
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  userId: varchar("user_id", { length: 36 }).references(() => user.id, {
+export const order = pgTable("order", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").references(() => user.id, {
     onDelete: "set null",
   }),
-  email: varchar("email", { length: 255 }).notNull(),
-  status: varchar("status", { length: 50 }).notNull().default("pending"),
-  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  email: text("email").notNull(),
+  status: text("status").notNull().default("pending"),
+  totalAmount: numeric("total_amount", { precision: 10, scale: 2 }).notNull(),
   shippingAddress: text("shipping_address").notNull(),
   ...timestamps,
 });
+export const orderRelations = relations(order, ({ many, one }) => ({
+  customer: one(user, {
+    fields: [order.userId],
+    references: [user.id],
+  }),
+  orderItems: many(orderItem),
+}));
 
-export const orderItem = mysqlTable("order_item", {
-  id: varchar("id", { length: 36 })
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  orderId: varchar("order_id", { length: 36 })
+export const orderItem = pgTable("order_item", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orderId: uuid("order_id")
     .notNull()
     .references(() => order.id, { onDelete: "cascade" }),
-  productId: varchar("product_id", { length: 36 })
+  productId: uuid("product_id")
     .notNull()
     .references(() => product.id, { onDelete: "cascade" }),
-  quantity: int("quantity").notNull(),
-  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  quantity: integer("quantity").notNull(),
+  unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+export const orderItemRelations = relations(orderItem, ({ one }) => ({
+  order: one(order, {
+    fields: [orderItem.orderId],
+    references: [order.id],
+  }),
+  product: one(product, {
+    fields: [orderItem.productId],
+    references: [product.id],
+  }),
+}));

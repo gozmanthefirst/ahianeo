@@ -1,15 +1,14 @@
-import {
-  boolean,
-  mysqlTable,
-  text,
-  timestamp,
-  varchar,
-} from "drizzle-orm/mysql-core";
+import { relations } from "drizzle-orm";
+import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-export const user = mysqlTable("user", {
-  id: varchar("id", { length: 36 }).primaryKey(),
+import { cart } from "./cart-schema";
+import { order } from "./order-schema";
+import { product } from "./product-schema";
+
+export const user = pgTable("user", {
+  id: text("id").primaryKey(),
   name: text("name").notNull(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
+  email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified")
     .$defaultFn(() => false)
     .notNull(),
@@ -25,3 +24,8 @@ export const user = mysqlTable("user", {
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
 });
+export const userRelations = relations(user, ({ many, one }) => ({
+  createdProducts: many(product),
+  cart: one(cart),
+  orders: many(order),
+}));
