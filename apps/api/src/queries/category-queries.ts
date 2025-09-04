@@ -17,5 +17,5 @@ export const getCategoryById = async (id: string) => {
   const { productCategories, ...category } = result;
   const products = productCategories.map((pc) => pc.product);
 
-  return { category, products };
+  return { ...category, products };
 };

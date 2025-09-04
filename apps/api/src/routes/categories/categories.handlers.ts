@@ -109,12 +109,9 @@ export const updateCategory: AppRouteHandler<UpdateCategoryRoute> = async (
     );
   }
 
-  if (categoryData.name === categoryToUpdate.category.name) {
+  if (categoryData.name === categoryToUpdate.name) {
     return c.json(
-      successResponse(
-        categoryToUpdate.category,
-        "Category updated successfully",
-      ),
+      successResponse(categoryToUpdate, "Category updated successfully"),
       HttpStatusCodes.OK,
     );
   }

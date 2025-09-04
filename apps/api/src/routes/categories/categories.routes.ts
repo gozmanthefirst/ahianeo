@@ -1,13 +1,13 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import {
+  CategoryExtendedSchema,
   CategorySelectSchema,
   CreateCategorySchema,
-  ProductSelectSchema,
   UpdateCategorySchema,
 } from "@repo/db/validators/product-validators";
 
 import HttpStatusCodes from "@/utils/http-status-codes";
-import { authExamples, productsExamples } from "@/utils/openapi-examples";
+import { authExamples, categoriesExamples } from "@/utils/openapi-examples";
 import {
   createIdUUIDParamsSchema,
   errorContent,
@@ -30,7 +30,7 @@ export const getAllCategories = createRoute({
       schema: z.array(CategorySelectSchema),
       resObj: {
         details: "All categories retrieved successfully",
-        data: [productsExamples.category],
+        data: [categoriesExamples.category],
       },
     }),
     [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
@@ -53,16 +53,10 @@ export const getCategory = createRoute({
   responses: {
     [HttpStatusCodes.OK]: successContent({
       description: "Category retrieved",
-      schema: z.object({
-        category: CategorySelectSchema,
-        products: z.array(ProductSelectSchema),
-      }),
+      schema: CategoryExtendedSchema,
       resObj: {
         details: "Category retrieved successfully",
-        data: {
-          category: productsExamples.category,
-          products: [productsExamples.product],
-        },
+        data: categoriesExamples.categoryExtended,
       },
     }),
     [HttpStatusCodes.BAD_REQUEST]: errorContent({
@@ -117,7 +111,7 @@ export const createCategory = createRoute({
       resObj: {
         details: "Category created successfully",
         data: {
-          ...productsExamples.category,
+          ...categoriesExamples.category,
           name: "New category",
           slug: "new-category",
         },
@@ -130,9 +124,9 @@ export const createCategory = createRoute({
           summary: "Validation error",
           code: "INVALID_DATA",
           details: getErrDetailsFromErrFields(
-            productsExamples.createCategoryValErrs,
+            categoriesExamples.createCategoryValErrs,
           ),
-          fields: productsExamples.createCategoryValErrs,
+          fields: categoriesExamples.createCategoryValErrs,
         },
       },
     }),
@@ -193,7 +187,7 @@ export const updateCategory = createRoute({
       resObj: {
         details: "Category updated successfully",
         data: {
-          ...productsExamples.category,
+          ...categoriesExamples.category,
           name: "Updated category",
           slug: "updated-category",
         },
@@ -206,9 +200,9 @@ export const updateCategory = createRoute({
           summary: "Validation error",
           code: "INVALID_DATA",
           details: getErrDetailsFromErrFields(
-            productsExamples.createCategoryValErrs,
+            categoriesExamples.createCategoryValErrs,
           ),
-          fields: productsExamples.createCategoryValErrs,
+          fields: categoriesExamples.createCategoryValErrs,
         },
         invalidUUID: {
           summary: "Invalid category ID",
@@ -271,7 +265,7 @@ export const deleteCategory = createRoute({
       schema: CategorySelectSchema,
       resObj: {
         details: "Category deleted successfully",
-        data: productsExamples.category,
+        data: categoriesExamples.category,
       },
     }),
     [HttpStatusCodes.BAD_REQUEST]: errorContent({
