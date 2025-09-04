@@ -15,6 +15,13 @@
       "when": 1756915652871,
       "tag": "0001_supreme_vision",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1756944432742,
+      "tag": "0002_fair_photon",
+      "breakpoints": true
     }
   ]
 }
