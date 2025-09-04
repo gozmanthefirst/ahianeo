@@ -305,6 +305,11 @@ export const deleteCategory = createRoute({
       "Category not found",
       "Category not found",
     ),
+    [HttpStatusCodes.CONFLICT]: genericErrorContent(
+      "CONFLICT",
+      "Category has associated products",
+      "Category has associated products",
+    ),
     [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
       "TOO_MANY_REQUESTS",
       "Too many requests",

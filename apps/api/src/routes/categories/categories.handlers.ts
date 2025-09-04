@@ -181,6 +181,13 @@ export const deleteCategory: AppRouteHandler<DeleteCategoryRoute> = async (
     );
   }
 
+  if (categoryToDelete.products.length > 0) {
+    return c.json(
+      errorResponse("CONFLICT", "Category has associated products"),
+      HttpStatusCodes.CONFLICT,
+    );
+  }
+
   const [deletedCategory] = await db
     .delete(category)
     .where(eq(category.id, id))
