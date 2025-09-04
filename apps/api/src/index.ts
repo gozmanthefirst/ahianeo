@@ -4,6 +4,7 @@ import { createSuperadmin } from "@/queries/admin-queries";
 import adminRouter from "./routes/admin/admin.index";
 import authRouter from "./routes/auth/auth.index";
 import categoriesRouter from "./routes/categories/categories.index";
+import productsRouter from "./routes/products/products.index";
 import superadminRouter from "./routes/superadmin/superadmin.index";
 import userRouter from "./routes/user/user.index";
 
@@ -15,6 +16,7 @@ const routers = [
   superadminRouter,
   adminRouter,
   categoriesRouter,
+  productsRouter,
 ];
 
 configureOpenAPI(app);

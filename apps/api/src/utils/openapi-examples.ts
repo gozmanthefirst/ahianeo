@@ -89,28 +89,58 @@ export const userExamples = {
   },
 };
 
-export const productsExamples = {
-  category: {
-    id: "123e4567-e89b-12d3-a456-426614174000",
-    name: "Category",
-    slug: "category",
-    createdAt: "2025-08-11T18:26:20.296Z",
-    updatedAt: "2025-08-11T18:26:20.296Z",
-  },
-  product: {
-    id: "123e4567-e89b-12d3-a456-426614174000",
-    name: "Product",
-    slug: "product",
-    description: "Product description",
-    price: "19.99",
-    stockQuantity: 100,
-    sizes: ["S", "M", "L", "XL"],
-    colors: ["Red", "Green", "Blue"],
-    createdBy: "aBCDEF0gHijkLM1NO2PqrsTuVwXyzaBc",
-    createdAt: "2025-08-11T18:26:20.296Z",
-    updatedAt: "2025-08-11T18:26:20.296Z",
+const product = {
+  id: "123e4567-e89b-12d3-a456-426614174000",
+  name: "Product",
+  slug: "product",
+  description: "Product description",
+  price: "19.99",
+  stockQuantity: 100,
+  sizes: [
+    { name: "S", inStock: true },
+    { name: "M", inStock: true },
+    { name: "L", inStock: true },
+    { name: "XL", inStock: true },
+  ],
+  colors: [
+    { name: "Red", inStock: true },
+    { name: "Green", inStock: true },
+    { name: "Blue", inStock: true },
+  ],
+  images: [
+    { url: "https://example.com/image1.png", alt: "Image 1" },
+    { url: "https://example.com/image2.png", alt: "Image 2" },
+    { url: "https://example.com/image3.png", alt: "Image 3" },
+  ],
+  createdBy: "aBCDEF0gHijkLM1NO2PqrsTuVwXyzaBc",
+  createdAt: "2025-08-11T18:26:20.296Z",
+  updatedAt: "2025-08-11T18:26:20.296Z",
+};
+
+const category = {
+  id: "123e4567-e89b-12d3-a456-426614174000",
+  name: "Category",
+  slug: "category",
+  createdAt: "2025-08-11T18:26:20.296Z",
+  updatedAt: "2025-08-11T18:26:20.296Z",
+};
+
+export const categoriesExamples = {
+  category,
+  categoryExtended: {
+    ...category,
+    products: [product],
   },
   createCategoryValErrs: {
     name: "Too small: expected string to have >=1 characters",
+  },
+};
+
+export const productsExamples = {
+  product,
+  productExtended: {
+    ...product,
+    categories: [categoriesExamples.category],
+    creator: userExamples.user,
   },
 };
