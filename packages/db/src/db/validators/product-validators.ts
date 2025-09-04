@@ -8,6 +8,10 @@ export const CategorySelectSchema = createSelectSchema(category);
 
 export const ProductSelectSchema = createSelectSchema(product);
 
+export const CategoryExtendedSchema = CategorySelectSchema.extend({
+  products: ProductSelectSchema.array(),
+});
+
 export const ProductExtendedSchema = ProductSelectSchema.extend({
   categories: CategorySelectSchema.array(),
   creator: UserSelectSchema.optional(),
