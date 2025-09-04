@@ -11,3 +11,5 @@ export const CreateCategorySchema = createInsertSchema(category, {
 }).pick({
   name: true,
 });
+
+export const UpdateCategorySchema = CreateCategorySchema;

@@ -15,7 +15,7 @@ import { user } from "./user-schema";
 
 export const product = pgTable("product", {
   id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
+  name: text("name").notNull().unique(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
