@@ -20,8 +20,18 @@ export const product = pgTable("product", {
   description: text("description"),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   stockQuantity: integer("stock_quantity").default(0),
-  sizes: jsonb("sizes").$type<string[]>().default([]),
-  colors: jsonb("colors").$type<string[]>().default([]),
+  sizes: jsonb("sizes")
+    .$type<{ name: string; inStock: boolean }[]>()
+    .default([])
+    .notNull(),
+  colors: jsonb("colors")
+    .$type<{ name: string; inStock: boolean }[]>()
+    .default([])
+    .notNull(),
+  images: jsonb("images")
+    .$type<{ url: string; alt: string }[]>()
+    .default([])
+    .notNull(),
   createdBy: text("created_by").references(() => user.id, {
     onDelete: "set null",
   }),
