@@ -20,9 +20,9 @@ categoriesRouter
   .use("/categories/*", checkRole(["admin", "superadmin"]));
 
 // Protected Admin routes
-categoriesRouter.openapi(
-  categoriesRoutes.createCategory,
-  categoriesHandlers.createCategory,
-);
+categoriesRouter
+  .openapi(categoriesRoutes.createCategory, categoriesHandlers.createCategory)
+  .openapi(categoriesRoutes.updateCategory, categoriesHandlers.updateCategory)
+  .openapi(categoriesRoutes.deleteCategory, categoriesHandlers.deleteCategory);
 
 export default categoriesRouter;

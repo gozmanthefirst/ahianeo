@@ -3,6 +3,7 @@ import {
   CategorySelectSchema,
   CreateCategorySchema,
   ProductSelectSchema,
+  UpdateCategorySchema,
 } from "@repo/db/validators/product-validators";
 
 import HttpStatusCodes from "@/utils/http-status-codes";
@@ -150,6 +151,160 @@ export const createCategory = createRoute({
         },
       },
     }),
+    [HttpStatusCodes.CONFLICT]: genericErrorContent(
+      "CONFLICT",
+      "Category name already exists",
+      "Category name already exists",
+    ),
+    [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
+      "TOO_MANY_REQUESTS",
+      "Too many requests",
+      "Too many requests have been made. Please try again later.",
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: serverErrorContent(),
+  },
+});
+
+export const updateCategory = createRoute({
+  path: "/categories/{id}",
+  method: "put",
+  security: [
+    {
+      Bearer: [],
+    },
+  ],
+  tags,
+  description: "Update a category",
+  request: {
+    params: createIdUUIDParamsSchema("Category ID"),
+    body: {
+      content: {
+        "application/json": {
+          schema: UpdateCategorySchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    [HttpStatusCodes.OK]: successContent({
+      description: "Category updated",
+      schema: CategorySelectSchema,
+      resObj: {
+        details: "Category updated successfully",
+        data: {
+          ...productsExamples.category,
+          name: "Updated category",
+          slug: "updated-category",
+        },
+      },
+    }),
+    [HttpStatusCodes.BAD_REQUEST]: errorContent({
+      description: "Invalid request data",
+      examples: {
+        validationError: {
+          summary: "Validation error",
+          code: "INVALID_DATA",
+          details: getErrDetailsFromErrFields(
+            productsExamples.createCategoryValErrs,
+          ),
+          fields: productsExamples.createCategoryValErrs,
+        },
+        invalidUUID: {
+          summary: "Invalid category ID",
+          code: "INVALID_DATA",
+          details: getErrDetailsFromErrFields(authExamples.uuidValErr),
+          fields: authExamples.uuidValErr,
+        },
+      },
+    }),
+    [HttpStatusCodes.UNAUTHORIZED]: genericErrorContent(
+      "UNAUTHORIZED",
+      "Unauthorized",
+      "No session found",
+    ),
+    [HttpStatusCodes.FORBIDDEN]: errorContent({
+      description: "Forbidden",
+      examples: {
+        requiredRole: {
+          summary: "Required role missing",
+          code: "FORBIDDEN",
+          details: "User does not have the required role",
+        },
+      },
+    }),
+    [HttpStatusCodes.NOT_FOUND]: genericErrorContent(
+      "NOT_FOUND",
+      "Category not found",
+      "Category not found",
+    ),
+    [HttpStatusCodes.CONFLICT]: genericErrorContent(
+      "CONFLICT",
+      "Category name already exists",
+      "Category name already exists",
+    ),
+    [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
+      "TOO_MANY_REQUESTS",
+      "Too many requests",
+      "Too many requests have been made. Please try again later.",
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: serverErrorContent(),
+  },
+});
+
+export const deleteCategory = createRoute({
+  path: "/categories/{id}",
+  method: "delete",
+  security: [
+    {
+      Bearer: [],
+    },
+  ],
+  tags,
+  description: "Delete a category",
+  request: {
+    params: createIdUUIDParamsSchema("Category ID"),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: successContent({
+      description: "Category deleted",
+      schema: CategorySelectSchema,
+      resObj: {
+        details: "Category deleted successfully",
+        data: productsExamples.category,
+      },
+    }),
+    [HttpStatusCodes.BAD_REQUEST]: errorContent({
+      description: "Invalid request data",
+      examples: {
+        invalidUUID: {
+          summary: "Invalid category ID",
+          code: "INVALID_DATA",
+          details: getErrDetailsFromErrFields(authExamples.uuidValErr),
+          fields: authExamples.uuidValErr,
+        },
+      },
+    }),
+    [HttpStatusCodes.UNAUTHORIZED]: genericErrorContent(
+      "UNAUTHORIZED",
+      "Unauthorized",
+      "No session found",
+    ),
+    [HttpStatusCodes.FORBIDDEN]: errorContent({
+      description: "Forbidden",
+      examples: {
+        requiredRole: {
+          summary: "Required role missing",
+          code: "FORBIDDEN",
+          details: "User does not have the required role",
+        },
+      },
+    }),
+    [HttpStatusCodes.NOT_FOUND]: genericErrorContent(
+      "NOT_FOUND",
+      "Category not found",
+      "Category not found",
+    ),
     [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
       "TOO_MANY_REQUESTS",
       "Too many requests",
@@ -162,3 +317,5 @@ export const createCategory = createRoute({
 export type GetAllCategoriesRoute = typeof getAllCategories;
 export type GetCategoryRoute = typeof getCategory;
 export type CreateCategoryRoute = typeof createCategory;
+export type UpdateCategoryRoute = typeof updateCategory;
+export type DeleteCategoryRoute = typeof deleteCategory;
