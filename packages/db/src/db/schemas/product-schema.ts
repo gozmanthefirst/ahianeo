@@ -29,7 +29,7 @@ export const product = pgTable("product", {
     .default([])
     .notNull(),
   images: jsonb("images")
-    .$type<{ url: string; alt: string }[]>()
+    .$type<{ url: string; key: string }[]>()
     .default([])
     .notNull(),
   createdBy: text("created_by").references(() => user.id, {

@@ -108,9 +108,9 @@ const product = {
     { name: "Blue", inStock: true },
   ],
   images: [
-    { url: "https://example.com/image1.png", alt: "Image 1" },
-    { url: "https://example.com/image2.png", alt: "Image 2" },
-    { url: "https://example.com/image3.png", alt: "Image 3" },
+    { url: "https://example.com/image1.png", key: "image1.png" },
+    { url: "https://example.com/image2.png", key: "image2.png" },
+    { url: "https://example.com/image3.png", key: "image3.png" },
   ],
   createdBy: "aBCDEF0gHijkLM1NO2PqrsTuVwXyzaBc",
   createdAt: "2025-08-11T18:26:20.296Z",
@@ -142,5 +142,12 @@ export const productsExamples = {
     ...product,
     categories: [categoriesExamples.category],
     creator: userExamples.user,
+  },
+  createProductValErrs: {
+    name: "Too small: expected string to have >=1 characters",
+    description: "Too small: expected string to have >=1 characters",
+    price: "Too small: expected string to have >=1 characters",
+    stockQuantity: "Expected number, received string",
+    createdBy: "Too small: expected string to have >=1 characters",
   },
 };
