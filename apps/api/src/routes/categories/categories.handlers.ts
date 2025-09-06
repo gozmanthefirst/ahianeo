@@ -50,48 +50,73 @@ export const createCategory: AppRouteHandler<CreateCategoryRoute> = async (
 ) => {
   const categoryData = c.req.valid("json");
 
-  const categories = await db.query.category.findMany();
-
-  const existingCategoryName = categories.find(
-    (cat) => cat.name.toLowerCase() === categoryData.name.toLowerCase(),
-  );
-
-  if (existingCategoryName) {
+  const trimmedName = categoryData.name.trim();
+  if (!trimmedName) {
     return c.json(
-      errorResponse("CONFLICT", "Category name already exists"),
-      HttpStatusCodes.CONFLICT,
+      errorResponse("INVALID_DATA", "Category name cannot be empty"),
+      HttpStatusCodes.BAD_REQUEST,
     );
   }
 
-  let slug = slugify(categoryData.name, { lower: true, strict: true });
-  let counter = 0;
+  try {
+    const result = await db.transaction(async (tx) => {
+      // Check for existing name (case-insensitive)
+      const existingCategory = await tx.query.category.findFirst({
+        where: (category, { sql }) =>
+          sql`LOWER(${category.name}) = LOWER(${trimmedName})`,
+      });
 
-  while (true) {
-    const finalSlug = counter === 0 ? slug : `${slug}-${counter}`;
-    const existingCategory = categories.find((cat) => cat.slug === finalSlug);
+      if (existingCategory) {
+        throw new Error("CATEGORY_EXISTS");
+      }
 
-    if (!existingCategory) {
-      slug = finalSlug;
-      break;
+      // Generate unique slug
+      const allCategories = await tx.query.category.findMany({
+        columns: { slug: true },
+      });
+
+      let slug = slugify(trimmedName, { lower: true, strict: true });
+      let counter = 0;
+
+      while (true) {
+        const finalSlug = counter === 0 ? slug : `${slug}-${counter}`;
+        const existingSlug = allCategories.find(
+          (cat) => cat.slug === finalSlug,
+        );
+
+        if (!existingSlug) {
+          slug = finalSlug;
+          break;
+        }
+        counter++;
+      }
+
+      const [newCategory] = await tx
+        .insert(category)
+        .values({ name: trimmedName, slug })
+        .returning();
+
+      return newCategory;
+    });
+
+    return c.json(
+      successResponse(result, "Category created successfully"),
+      HttpStatusCodes.CREATED,
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message === "CATEGORY_EXISTS") {
+      return c.json(
+        errorResponse("CONFLICT", "Category name already exists"),
+        HttpStatusCodes.CONFLICT,
+      );
     }
-    counter++;
+
+    console.error("Error creating category:", error);
+    return c.json(
+      errorResponse("INTERNAL_SERVER_ERROR", "Failed to create category"),
+      HttpStatusCodes.INTERNAL_SERVER_ERROR,
+    );
   }
-
-  const payload = {
-    name: categoryData.name,
-    slug,
-  };
-
-  const [newCategory] = await db
-    .insert(category)
-    .values(payload)
-    .onConflictDoNothing({ target: category.name })
-    .returning();
-
-  return c.json(
-    successResponse(newCategory, "Category created successfully"),
-    HttpStatusCodes.CREATED,
-  );
 };
 
 export const updateCategory: AppRouteHandler<UpdateCategoryRoute> = async (
@@ -99,6 +124,14 @@ export const updateCategory: AppRouteHandler<UpdateCategoryRoute> = async (
 ) => {
   const { id } = c.req.valid("param");
   const categoryData = c.req.valid("json");
+
+  const trimmedName = categoryData.name.trim();
+  if (!trimmedName) {
+    return c.json(
+      errorResponse("INVALID_DATA", "Category name cannot be empty"),
+      HttpStatusCodes.BAD_REQUEST,
+    );
+  }
 
   const categoryToUpdate = await getCategoryById(id);
 
@@ -109,59 +142,79 @@ export const updateCategory: AppRouteHandler<UpdateCategoryRoute> = async (
     );
   }
 
-  if (categoryData.name === categoryToUpdate.name) {
+  // Case-insensitive comparison
+  if (trimmedName.toLowerCase() === categoryToUpdate.name.toLowerCase()) {
     return c.json(
       successResponse(categoryToUpdate, "Category updated successfully"),
       HttpStatusCodes.OK,
     );
   }
 
-  const categories = await db.query.category.findMany();
+  try {
+    const result = await db.transaction(async (tx) => {
+      // Fetch all categories except current one and check in JavaScript
+      const allCategories = await tx.query.category.findMany({
+        where: (category, { ne }) => ne(category.id, id),
+        columns: { id: true, name: true },
+      });
 
-  const existingCategoryName = categories.find(
-    (cat) =>
-      cat.name.toLowerCase() === categoryData.name.toLowerCase() &&
-      cat.id !== id,
-  );
+      // Check for case-insensitive name match
+      const existingCategory = allCategories.find(
+        (cat) => cat.name.toLowerCase() === trimmedName.toLowerCase(),
+      );
 
-  if (existingCategoryName) {
+      if (existingCategory) {
+        throw new Error("CATEGORY_EXISTS");
+      }
+
+      // Generate unique slug
+      const allCategoriesForSlug = await tx.query.category.findMany({
+        columns: { slug: true, id: true },
+      });
+
+      let slug = slugify(trimmedName, { lower: true, strict: true });
+      let counter = 0;
+
+      while (true) {
+        const finalSlug = counter === 0 ? slug : `${slug}-${counter}`;
+        const existingSlug = allCategoriesForSlug.find(
+          (cat) => cat.slug === finalSlug && cat.id !== id,
+        );
+
+        if (!existingSlug) {
+          slug = finalSlug;
+          break;
+        }
+        counter++;
+      }
+
+      const [updatedCategory] = await tx
+        .update(category)
+        .set({ name: trimmedName, slug })
+        .where(eq(category.id, id))
+        .returning();
+
+      return updatedCategory;
+    });
+
     return c.json(
-      errorResponse("CONFLICT", "Category name already exists"),
-      HttpStatusCodes.CONFLICT,
+      successResponse(result, "Category updated successfully"),
+      HttpStatusCodes.OK,
     );
-  }
-
-  let slug = slugify(categoryData.name, { lower: true, strict: true });
-  let counter = 0;
-
-  while (true) {
-    const finalSlug = counter === 0 ? slug : `${slug}-${counter}`;
-    const existingCategory = categories.find(
-      (cat) => cat.slug === finalSlug && cat.id !== id,
-    );
-
-    if (!existingCategory) {
-      slug = finalSlug;
-      break;
+  } catch (error) {
+    if (error instanceof Error && error.message === "CATEGORY_EXISTS") {
+      return c.json(
+        errorResponse("CONFLICT", "Category name already exists"),
+        HttpStatusCodes.CONFLICT,
+      );
     }
-    counter++;
+
+    console.error("Error updating category:", error);
+    return c.json(
+      errorResponse("INTERNAL_SERVER_ERROR", "Failed to update category"),
+      HttpStatusCodes.INTERNAL_SERVER_ERROR,
+    );
   }
-
-  const payload = {
-    name: categoryData.name,
-    slug,
-  };
-
-  const [newCategory] = await db
-    .update(category)
-    .set({ name: payload.name, slug: payload.slug })
-    .where(eq(category.id, id))
-    .returning();
-
-  return c.json(
-    successResponse(newCategory, "Category updated successfully"),
-    HttpStatusCodes.OK,
-  );
 };
 
 export const deleteCategory: AppRouteHandler<DeleteCategoryRoute> = async (
@@ -169,29 +222,58 @@ export const deleteCategory: AppRouteHandler<DeleteCategoryRoute> = async (
 ) => {
   const { id } = c.req.valid("param");
 
-  const categoryToDelete = await getCategoryById(id);
+  try {
+    const result = await db.transaction(async (tx) => {
+      const categoryToDelete = await tx.query.category.findFirst({
+        where: (category, { eq }) => eq(category.id, id),
+        with: {
+          productCategories: {
+            columns: { id: true },
+          },
+        },
+      });
 
-  if (!categoryToDelete) {
+      if (!categoryToDelete) {
+        throw new Error("CATEGORY_NOT_FOUND");
+      }
+
+      if (categoryToDelete.productCategories.length > 0) {
+        throw new Error("CATEGORY_HAS_PRODUCTS");
+      }
+
+      const [deletedCategory] = await tx
+        .delete(category)
+        .where(eq(category.id, id))
+        .returning();
+
+      return deletedCategory;
+    });
+
     return c.json(
-      errorResponse("NOT_FOUND", "Category not found"),
-      HttpStatusCodes.NOT_FOUND,
+      successResponse(result, "Category deleted successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "CATEGORY_NOT_FOUND") {
+        return c.json(
+          errorResponse("NOT_FOUND", "Category not found"),
+          HttpStatusCodes.NOT_FOUND,
+        );
+      }
+
+      if (error.message === "CATEGORY_HAS_PRODUCTS") {
+        return c.json(
+          errorResponse("CONFLICT", "Category has associated products"),
+          HttpStatusCodes.CONFLICT,
+        );
+      }
+    }
+
+    console.error("Error deleting category:", error);
+    return c.json(
+      errorResponse("INTERNAL_SERVER_ERROR", "Failed to delete category"),
+      HttpStatusCodes.INTERNAL_SERVER_ERROR,
     );
   }
-
-  if (categoryToDelete.products.length > 0) {
-    return c.json(
-      errorResponse("CONFLICT", "Category has associated products"),
-      HttpStatusCodes.CONFLICT,
-    );
-  }
-
-  const [deletedCategory] = await db
-    .delete(category)
-    .where(eq(category.id, id))
-    .returning();
-
-  return c.json(
-    successResponse(deletedCategory, "Category deleted successfully"),
-    HttpStatusCodes.OK,
-  );
 };
