@@ -3,7 +3,10 @@ import { z } from "@hono/zod-openapi";
 export const CreateProductSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1).optional(),
-  price: z.string().min(1),
+  price: z
+    .string()
+    .min(1)
+    .regex(/^\d+(\.\d{2})?$/),
   stockQuantity: z.string().min(1),
   sizes: z
     .string()
@@ -45,7 +48,10 @@ export const CreateProductSchema = z.object({
 export const UpdateProductSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().min(1).optional(),
-  price: z.string().optional(),
+  price: z
+    .string()
+    .regex(/^\d+(\.\d{2})?$/)
+    .optional(),
   stockQuantity: z.string().optional(),
   sizes: z
     .string()
