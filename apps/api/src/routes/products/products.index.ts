@@ -17,9 +17,9 @@ productsRouter
   .use("/products/*", checkRole(["admin", "superadmin"]));
 
 // Protected Admin routes
-productsRouter.openapi(
-  productsRoutes.createProduct,
-  productsHandlers.createProduct,
-);
+productsRouter
+  .openapi(productsRoutes.createProduct, productsHandlers.createProduct)
+  .openapi(productsRoutes.updateProduct, productsHandlers.updateProduct)
+  .openapi(productsRoutes.deleteProduct, productsHandlers.deleteProduct);
 
 export default productsRouter;

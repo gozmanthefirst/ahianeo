@@ -148,6 +148,9 @@ export const productsExamples = {
     description: "Too small: expected string to have >=1 characters",
     price: "Too small: expected string to have >=1 characters",
     stockQuantity: "Expected number, received string",
+    sizes: "Sizes must be valid JSON",
+    colors: "Colors must be valid JSON",
+    categoryIds: "Category IDs must be valid JSON",
     createdBy: "Too small: expected string to have >=1 characters",
   },
 };

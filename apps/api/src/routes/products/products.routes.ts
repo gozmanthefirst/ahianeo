@@ -1,7 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { ProductExtendedSchema } from "@repo/db/validators/product-validators";
 
-import { CreateProductSchema } from "@/lib/schemas";
+import { CreateProductSchema, UpdateProductSchema } from "@/lib/schemas";
 import HttpStatusCodes from "@/utils/http-status-codes";
 import { authExamples, productsExamples } from "@/utils/openapi-examples";
 import {
@@ -177,6 +177,209 @@ export const createProduct = createRoute({
   },
 });
 
+export const updateProduct = createRoute({
+  path: "/products/{id}",
+  method: "put",
+  security: [
+    {
+      Bearer: [],
+    },
+  ],
+  tags,
+  description: "Update an existing product",
+  request: {
+    params: createIdUUIDParamsSchema("Product ID"),
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: UpdateProductSchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    [HttpStatusCodes.OK]: successContent({
+      description: "Product updated",
+      schema: ProductExtendedSchema,
+      resObj: {
+        details: "Product updated successfully",
+        data: productsExamples.productExtended,
+      },
+    }),
+    [HttpStatusCodes.BAD_REQUEST]: errorContent({
+      description: "Invalid request data",
+      examples: {
+        validationError: {
+          summary: "Validation error",
+          code: "INVALID_DATA",
+          details: getErrDetailsFromErrFields(
+            productsExamples.createProductValErrs,
+          ),
+          fields: productsExamples.createProductValErrs,
+        },
+        categoryNotFound: {
+          summary: "Category not found",
+          code: "INVALID_DATA",
+          details: "One or more categories not found",
+        },
+        invalidImageKey: {
+          summary: "Invalid image key",
+          code: "INVALID_DATA",
+          details:
+            "Invalid image key: 'invalid-key' doesn't exist in this product",
+          fields: {
+            keepImageKeys:
+              "Invalid image key: 'invalid-key' doesn't exist in this product",
+          },
+        },
+        invalidUUID: {
+          summary: "Invalid product ID",
+          code: "INVALID_DATA",
+          details: getErrDetailsFromErrFields(authExamples.uuidValErr),
+          fields: authExamples.uuidValErr,
+        },
+      },
+    }),
+    [HttpStatusCodes.UNAUTHORIZED]: genericErrorContent(
+      "UNAUTHORIZED",
+      "Unauthorized",
+      "No session found",
+    ),
+    [HttpStatusCodes.FORBIDDEN]: errorContent({
+      description: "Forbidden",
+      examples: {
+        requiredRole: {
+          summary: "Required role missing",
+          code: "FORBIDDEN",
+          details: "User does not have the required role",
+        },
+      },
+    }),
+    [HttpStatusCodes.NOT_FOUND]: genericErrorContent(
+      "NOT_FOUND",
+      "Product not found",
+      "Product not found",
+    ),
+    [HttpStatusCodes.UNPROCESSABLE_ENTITY]: errorContent({
+      description: "Invalid file data",
+      examples: {
+        noImages: {
+          summary: "No images after update",
+          code: "INVALID_FILE",
+          details: "Product must have at least 1 image",
+        },
+        tooManyImages: {
+          summary: "Too many images",
+          code: "INVALID_FILE",
+          details: "Maximum 3 images allowed",
+        },
+        fileSizeError: {
+          summary: "File size too large",
+          code: "INVALID_FILE",
+          details: "Image 1: File size must be less than 1MB",
+        },
+        fileTypeError: {
+          summary: "Invalid file type",
+          code: "INVALID_FILE",
+          details:
+            "Image 1: File type must be one of: image/jpeg, image/png, image/webp",
+        },
+      },
+    }),
+    [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
+      "TOO_MANY_REQUESTS",
+      "Too many requests",
+      "Too many requests have been made. Please try again later.",
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: serverErrorContent(),
+  },
+});
+
+export const deleteProduct = createRoute({
+  path: "/products/{id}",
+  method: "delete",
+  security: [
+    {
+      Bearer: [],
+    },
+  ],
+  tags,
+  description: "Delete a product",
+  request: {
+    params: createIdUUIDParamsSchema("Product ID"),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: successContent({
+      description: "Product deleted",
+      schema: ProductExtendedSchema,
+      resObj: {
+        details: "Product deleted successfully",
+        data: productsExamples.productExtended,
+      },
+    }),
+    [HttpStatusCodes.BAD_REQUEST]: errorContent({
+      description: "Invalid request data",
+      examples: {
+        invalidUUID: {
+          summary: "Invalid product ID",
+          code: "INVALID_DATA",
+          details: getErrDetailsFromErrFields(authExamples.uuidValErr),
+          fields: authExamples.uuidValErr,
+        },
+      },
+    }),
+    [HttpStatusCodes.UNAUTHORIZED]: genericErrorContent(
+      "UNAUTHORIZED",
+      "Unauthorized",
+      "No session found",
+    ),
+    [HttpStatusCodes.FORBIDDEN]: errorContent({
+      description: "Forbidden",
+      examples: {
+        requiredRole: {
+          summary: "Required role missing",
+          code: "FORBIDDEN",
+          details: "User does not have the required role",
+        },
+      },
+    }),
+    [HttpStatusCodes.NOT_FOUND]: genericErrorContent(
+      "NOT_FOUND",
+      "Product not found",
+      "Product not found",
+    ),
+    [HttpStatusCodes.CONFLICT]: errorContent({
+      description: "Product has dependencies",
+      examples: {
+        hasCartItems: {
+          summary: "Product in carts",
+          code: "CONFLICT",
+          details: "Product cannot be deleted as it exists in user carts",
+        },
+        hasOrderItems: {
+          summary: "Product in orders",
+          code: "CONFLICT",
+          details: "Product cannot be deleted as it exists in orders",
+        },
+        hasBothDependencies: {
+          summary: "Product in carts and orders",
+          code: "CONFLICT",
+          details: "Product cannot be deleted as it exists in carts and orders",
+        },
+      },
+    }),
+    [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
+      "TOO_MANY_REQUESTS",
+      "Too many requests",
+      "Too many requests have been made. Please try again later.",
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: serverErrorContent(),
+  },
+});
+
 export type GetAllproductsRoute = typeof getAllProducts;
 export type GetProductRoute = typeof getProduct;
 export type CreateProductRoute = typeof createProduct;
+export type UpdateProductRoute = typeof updateProduct;
+export type DeleteProductRoute = typeof deleteProduct;
