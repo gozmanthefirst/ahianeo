@@ -5,6 +5,7 @@ import { admin as adminPlugin, bearer, openAPI } from "better-auth/plugins";
 
 import { sendResetPasswordEmail, sendVerificationEmail } from "@/lib/email";
 import { ac, admin, superadmin, user } from "@/lib/permissions";
+import { createCartForUser } from "@/queries/cart-queries";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -32,6 +33,16 @@ export const auth = betterAuth({
         name: user.name,
         token,
       });
+    },
+  },
+
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          await createCartForUser(user.id);
+        },
+      },
     },
   },
 
