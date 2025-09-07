@@ -2,9 +2,12 @@ import { APIError } from "better-auth/api";
 
 import { auth } from "@/lib/auth";
 import type { AppRouteHandler, ErrorStatusCodes } from "@/lib/types";
+import { getAdminOrderById, getAllOrders } from "@/queries/order-queries";
 import { getSessionByToken, getUserById } from "@/queries/user-queries";
 import type {
   ChangeUserPwdRoute,
+  GetAdminOrderRoute,
+  GetAllOrdersRoute,
   ListUserSessionsRoute,
   ListUsersRoute,
   RevokeUserSessionRoute,
@@ -13,6 +16,54 @@ import type {
 import { errorResponse, successResponse } from "@/utils/api-response";
 import HttpStatusCodes from "@/utils/http-status-codes";
 import type { BanUserRoute, UnbanUserRoute } from "./admin.routes";
+
+export const getAdminOrders: AppRouteHandler<GetAllOrdersRoute> = async (c) => {
+  try {
+    const orders = await getAllOrders();
+
+    return c.json(
+      successResponse(orders, "All orders retrieved successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    console.error("Error retrieving all orders:", error);
+    return c.json(
+      errorResponse("INTERNAL_SERVER_ERROR", "Failed to retrieve orders"),
+      HttpStatusCodes.INTERNAL_SERVER_ERROR,
+    );
+  }
+};
+
+export const getAdminOrderDetails: AppRouteHandler<GetAdminOrderRoute> = async (
+  c,
+) => {
+  const { id } = c.req.valid("param");
+
+  try {
+    const orderWithItems = await getAdminOrderById(id);
+
+    if (!orderWithItems) {
+      return c.json(
+        errorResponse("NOT_FOUND", "Order not found"),
+        HttpStatusCodes.NOT_FOUND,
+      );
+    }
+
+    return c.json(
+      successResponse(orderWithItems, "Order details retrieved successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    console.error("Error retrieving order details:", error);
+    return c.json(
+      errorResponse(
+        "INTERNAL_SERVER_ERROR",
+        "Failed to retrieve order details",
+      ),
+      HttpStatusCodes.INTERNAL_SERVER_ERROR,
+    );
+  }
+};
 
 export const listUsers: AppRouteHandler<ListUsersRoute> = async (c) => {
   try {

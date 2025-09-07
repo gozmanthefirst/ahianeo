@@ -1,6 +1,63 @@
-import db, { eq, sql } from "@repo/db";
+import db, { desc, eq, sql } from "@repo/db";
 import { order, orderItem } from "@repo/db/schemas/order-schema";
 import { product } from "@repo/db/schemas/product-schema";
+
+/**
+ * Get all orders with customer information (admin only)
+ */
+export const getAllOrders = async () => {
+  const allOrders = await db.query.order.findMany({
+    with: {
+      orderItems: {
+        with: {
+          product: true,
+        },
+      },
+      customer: true,
+    },
+    orderBy: [desc(order.createdAt)],
+  });
+
+  return allOrders;
+};
+
+/**
+ * Get order by ID with customer information (admin only)
+ */
+export const getAdminOrderById = async (orderId: string) => {
+  const orderWithItems = await db.query.order.findFirst({
+    where: (order, { eq }) => eq(order.id, orderId),
+    with: {
+      orderItems: {
+        with: {
+          product: true,
+        },
+      },
+      customer: true,
+    },
+  });
+
+  return orderWithItems;
+};
+
+/**
+ * Get user's orders with order items and products
+ */
+export const getUserOrders = async (userId: string) => {
+  const userOrders = await db.query.order.findMany({
+    where: (order, { eq }) => eq(order.userId, userId),
+    with: {
+      orderItems: {
+        with: {
+          product: true,
+        },
+      },
+    },
+    orderBy: [desc(order.createdAt)],
+  });
+
+  return userOrders;
+};
 
 /**
  * Generate a random order number
@@ -69,7 +126,7 @@ export const createOrderItems = async (
 };
 
 /**
- * Get order by ID with all relations
+ * Get order by ID with all relations (no customer)
  */
 export const getOrderById = async (orderId: string) => {
   const orderWithItems = await db.query.order.findFirst({
@@ -80,7 +137,6 @@ export const getOrderById = async (orderId: string) => {
           product: true,
         },
       },
-      customer: true,
     },
   });
 
@@ -93,27 +149,6 @@ export const getOrderById = async (orderId: string) => {
 export const getOrderByStripeSessionId = async (sessionId: string) => {
   const orderWithItems = await db.query.order.findFirst({
     where: (order, { eq }) => eq(order.stripeCheckoutSessionId, sessionId),
-    with: {
-      orderItems: {
-        with: {
-          product: true,
-        },
-      },
-      customer: true,
-    },
-  });
-
-  return orderWithItems;
-};
-
-// Add this function that was referenced but missing
-export const getOrderByStripePaymentIntentId = async (
-  paymentIntentId: string,
-) => {
-  // This is for backward compatibility with old PaymentIntent-based orders
-  const orderWithItems = await db.query.order.findFirst({
-    where: (order, { eq }) =>
-      eq(order.stripeCheckoutSessionId, paymentIntentId), // Using same field
     with: {
       orderItems: {
         with: {
@@ -156,7 +191,7 @@ export const updateOrderStatus = async (
 };
 
 /**
- * Get user's cart by user ID (for clearing)
+ * Get user's cart by user ID
  */
 export const getUserCartId = async (userId: string) => {
   const userCart = await db.query.cart.findFirst({

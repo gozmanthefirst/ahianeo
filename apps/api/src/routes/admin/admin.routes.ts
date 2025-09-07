@@ -1,13 +1,19 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { SessionSelectSchema } from "@repo/db/validators/auth-validators";
+import { OrderWithCustomerSelectSchema } from "@repo/db/validators/order-validators";
 import {
   BanUserSchema,
   UserSelectSchema,
 } from "@repo/db/validators/user-validators";
 
 import HttpStatusCodes from "@/utils/http-status-codes";
-import { authExamples, userExamples } from "@/utils/openapi-examples";
 import {
+  authExamples,
+  orderExamples,
+  userExamples,
+} from "@/utils/openapi-examples";
+import {
+  createIdUUIDParamsSchema,
   errorContent,
   genericErrorContent,
   getErrDetailsFromErrFields,
@@ -16,6 +22,111 @@ import {
 } from "@/utils/openapi-helpers";
 
 const tags = ["Admin"];
+
+export const getAllOrders = createRoute({
+  path: "/admin/orders",
+  method: "get",
+  security: [
+    {
+      Bearer: [],
+    },
+  ],
+  tags,
+  description: "Get all orders (admin only)",
+  responses: {
+    [HttpStatusCodes.OK]: successContent({
+      description: "All orders retrieved",
+      schema: z.array(OrderWithCustomerSelectSchema),
+      resObj: {
+        details: "All orders retrieved successfully",
+        data: [orderExamples.orderWithCustomer],
+      },
+    }),
+    [HttpStatusCodes.UNAUTHORIZED]: genericErrorContent(
+      "UNAUTHORIZED",
+      "Unauthorized",
+      "No session found",
+    ),
+    [HttpStatusCodes.FORBIDDEN]: errorContent({
+      description: "Forbidden",
+      examples: {
+        requiredRole: {
+          summary: "Required role missing",
+          code: "FORBIDDEN",
+          details: "User does not have the required role",
+        },
+      },
+    }),
+    [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
+      "TOO_MANY_REQUESTS",
+      "Too many requests",
+      "Too many requests have been made. Please try again later.",
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: serverErrorContent(),
+  },
+});
+
+export const getAdminOrder = createRoute({
+  path: "/admin/orders/{id}",
+  method: "get",
+  security: [
+    {
+      Bearer: [],
+    },
+  ],
+  tags,
+  description: "Get order details (admin only)",
+  request: {
+    params: createIdUUIDParamsSchema("Order ID"),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: successContent({
+      description: "Order details retrieved",
+      schema: OrderWithCustomerSelectSchema,
+      resObj: {
+        details: "Order details retrieved successfully",
+        data: orderExamples.orderWithCustomer,
+      },
+    }),
+    [HttpStatusCodes.BAD_REQUEST]: errorContent({
+      description: "Invalid request data",
+      examples: {
+        invalidUUID: {
+          summary: "Invalid order ID",
+          code: "INVALID_DATA",
+          details: getErrDetailsFromErrFields(authExamples.uuidValErr),
+          fields: authExamples.uuidValErr,
+        },
+      },
+    }),
+    [HttpStatusCodes.UNAUTHORIZED]: genericErrorContent(
+      "UNAUTHORIZED",
+      "Unauthorized",
+      "No session found",
+    ),
+    [HttpStatusCodes.FORBIDDEN]: errorContent({
+      description: "Forbidden",
+      examples: {
+        requiredRole: {
+          summary: "Required role missing",
+          code: "FORBIDDEN",
+          details: "User does not have the required role",
+        },
+      },
+    }),
+    [HttpStatusCodes.NOT_FOUND]: genericErrorContent(
+      "NOT_FOUND",
+      "Order not found",
+      "Order not found",
+    ),
+    [HttpStatusCodes.TOO_MANY_REQUESTS]: genericErrorContent(
+      "TOO_MANY_REQUESTS",
+      "Too many requests",
+      "Too many requests have been made. Please try again later.",
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: serverErrorContent(),
+  },
+});
 
 export const listUsers = createRoute({
   path: "/admin/list-users",
@@ -596,6 +707,8 @@ export const unbanUser = createRoute({
   },
 });
 
+export type GetAllOrdersRoute = typeof getAllOrders;
+export type GetAdminOrderRoute = typeof getAdminOrder;
 export type ListUsersRoute = typeof listUsers;
 export type ListUserSessionsRoute = typeof listUserSessions;
 export type RevokeUserSessionRoute = typeof revokeUserSession;

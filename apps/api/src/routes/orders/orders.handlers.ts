@@ -9,11 +9,69 @@ import {
   createOrder,
   createOrderItems,
   getOrderById,
+  getUserOrders,
   reserveStock,
 } from "@/queries/order-queries";
-import type { CreateCheckoutRoute } from "@/routes/orders/orders.routes";
+import type {
+  CreateCheckoutRoute,
+  GetUserOrderRoute,
+  GetUserOrdersRoute,
+} from "@/routes/orders/orders.routes";
 import { errorResponse, successResponse } from "@/utils/api-response";
 import HttpStatusCodes from "@/utils/http-status-codes";
+
+export const getUserOrderHistory: AppRouteHandler<GetUserOrdersRoute> = async (
+  c,
+) => {
+  const user = c.get("user");
+
+  try {
+    const orders = await getUserOrders(user.id);
+
+    return c.json(
+      successResponse(orders, "User orders retrieved successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    console.error("Error retrieving user orders:", error);
+    return c.json(
+      errorResponse("INTERNAL_SERVER_ERROR", "Failed to retrieve orders"),
+      HttpStatusCodes.INTERNAL_SERVER_ERROR,
+    );
+  }
+};
+
+export const getUserOrderDetails: AppRouteHandler<GetUserOrderRoute> = async (
+  c,
+) => {
+  const user = c.get("user");
+  const { id } = c.req.valid("param");
+
+  try {
+    const orderWithItems = await getOrderById(id);
+
+    if (!orderWithItems || orderWithItems.userId !== user.id) {
+      return c.json(
+        errorResponse("NOT_FOUND", "Order not found"),
+        HttpStatusCodes.NOT_FOUND,
+      );
+    }
+
+    return c.json(
+      successResponse(orderWithItems, "Order details retrieved successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    console.error("Error retrieving order details:", error);
+    return c.json(
+      errorResponse(
+        "INTERNAL_SERVER_ERROR",
+        "Failed to retrieve order details",
+      ),
+      HttpStatusCodes.INTERNAL_SERVER_ERROR,
+    );
+  }
+};
 
 export const createCheckout: AppRouteHandler<CreateCheckoutRoute> = async (
   c,
@@ -166,36 +224,8 @@ export const createCheckout: AppRouteHandler<CreateCheckoutRoute> = async (
     );
   }
 
-  // Format order items response
-  const formattedOrderItems = orderWithItems.orderItems.map((item) => ({
-    id: item.id,
-    orderId: item.orderId,
-    productId: item.productId,
-    quantity: item.quantity,
-    unitPrice: item.unitPrice,
-    subTotal: item.subTotal,
-    product: item.product,
-    createdAt: item.createdAt,
-  }));
-
-  // Updated order response
-  const orderResponse = {
-    id: orderWithItems.id,
-    orderNumber: orderWithItems.orderNumber,
-    userId: orderWithItems.userId,
-    email: orderWithItems.email,
-    status: orderWithItems.status,
-    paymentStatus: orderWithItems.paymentStatus,
-    totalAmount: orderWithItems.totalAmount,
-    stripeCheckoutSessionId: orderWithItems.stripeCheckoutSessionId,
-    paymentMethod: orderWithItems.paymentMethod,
-    orderItems: formattedOrderItems,
-    createdAt: orderWithItems.createdAt,
-    updatedAt: orderWithItems.updatedAt,
-  };
-
   const checkoutResponse = {
-    order: orderResponse,
+    order: orderWithItems,
     checkoutUrl: result.checkoutSession.url,
     checkoutSessionId: result.checkoutSession.id,
     stripePublishableKey: env.STRIPE_PUBLISHABLE_KEY,

@@ -9,9 +9,9 @@ const ordersRouter = createRouter();
 ordersRouter.use("/orders/*", authMiddleware);
 
 // Order routes
-ordersRouter.openapi(
-  ordersRoutes.createCheckout,
-  ordersHandlers.createCheckout,
-);
+ordersRouter
+  .openapi(ordersRoutes.getUserOrders, ordersHandlers.getUserOrderHistory)
+  .openapi(ordersRoutes.getUserOrder, ordersHandlers.getUserOrderDetails)
+  .openapi(ordersRoutes.createCheckout, ordersHandlers.createCheckout);
 
 export default ordersRouter;

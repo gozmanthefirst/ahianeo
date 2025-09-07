@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { order, orderItem } from "../schemas/order-schema";
 import { ProductSelectSchema } from "./product-validators";
+import { UserSelectSchema } from "./user-validators";
 
 export const OrderItemSelectSchema = createSelectSchema(orderItem).extend({
   product: ProductSelectSchema,
@@ -10,6 +11,11 @@ export const OrderItemSelectSchema = createSelectSchema(orderItem).extend({
 
 export const OrderSelectSchema = createSelectSchema(order).extend({
   orderItems: OrderItemSelectSchema.array(),
+});
+
+export const OrderWithCustomerSelectSchema = createSelectSchema(order).extend({
+  orderItems: OrderItemSelectSchema.array(),
+  customer: UserSelectSchema,
 });
 
 export const CreateCheckoutResponseSchema = z.object({

@@ -10,6 +10,8 @@ adminRouter
   .use("/admin/*", checkRole(["admin", "superadmin"]));
 
 adminRouter
+  .openapi(adminRoutes.getAllOrders, adminHandlers.getAdminOrders)
+  .openapi(adminRoutes.getAdminOrder, adminHandlers.getAdminOrderDetails)
   .openapi(adminRoutes.listUsers, adminHandlers.listUsers)
   .openapi(adminRoutes.listUserSessions, adminHandlers.listUserSessions)
   .openapi(adminRoutes.revokeUserSession, adminHandlers.revokeUserSession)
