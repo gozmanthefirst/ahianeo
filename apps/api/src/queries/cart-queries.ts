@@ -137,3 +137,25 @@ export const clearCartItems = async (cartId: string) => {
 
   return deletedItems;
 };
+
+/**
+ * Clear all cart items for a specific user (by user ID)
+ */
+export const clearCartItemsByUserId = async (userId: string) => {
+  // First get the user's cart
+  const userCart = await db.query.cart.findFirst({
+    where: (cart, { eq }) => eq(cart.userId, userId),
+  });
+
+  if (!userCart) {
+    return;
+  }
+
+  // Clear all items from the cart
+  const deletedItems = await db
+    .delete(cartItem)
+    .where(eq(cartItem.cartId, userCart.id))
+    .returning();
+
+  return deletedItems;
+};

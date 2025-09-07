@@ -190,3 +190,37 @@ export const cartExamples = {
     quantity: "Too small: expected number to be >=1",
   },
 };
+
+export const orderExamples = {
+  createCheckoutResponse: {
+    order: {
+      id: "123e4567-e89b-12d3-a456-426614174000",
+      orderNumber: "ORD-2024-847392",
+      userId: "user_123456789",
+      email: "user@example.com",
+      status: "pending",
+      paymentStatus: "pending",
+      totalAmount: "39.98",
+      stripeCheckoutSessionId: "cs_1234567890abcdef", // Updated field name
+      paymentMethod: null,
+      // Removed shippingAddress and billingAddress - Stripe Checkout handles these
+      orderItems: [
+        {
+          id: "456e7890-e12b-34c5-d678-901234567890",
+          orderId: "123e4567-e89b-12d3-a456-426614174000",
+          productId: "789e0123-e45f-67a8-b901-234567890123",
+          quantity: 2,
+          unitPrice: "19.99",
+          subTotal: "39.98",
+          product: product,
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ],
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+    },
+    checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_1234567890abcdef", // Updated to checkoutUrl
+    checkoutSessionId: "cs_1234567890abcdef", // Updated field name
+    stripePublishableKey: "pk_test_abc123def456ghi789jkl012mno345pqr678stu901",
+  },
+};
