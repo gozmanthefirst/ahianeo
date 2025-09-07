@@ -19,11 +19,11 @@ export const order = pgTable("order", {
     onDelete: "set null",
   }),
   email: text("email").notNull(),
-  status: text("status").notNull().default("pending"), // pending, processing, shipped, delivered, cancelled
+  status: text("status").notNull().default("pending"), // pending, processing, cancelled, completed
   paymentStatus: text("payment_status").notNull().default("pending"), // pending, paid, failed, refunded
   totalAmount: numeric("total_amount", { precision: 10, scale: 2 }).notNull(),
-  stripeCheckoutSessionId: text("stripe_checkout_session_id"), // Renamed for clarity
-  paymentMethod: text("payment_method"), // card, apple_pay, google_pay, etc.
+  stripeCheckoutSessionId: text("stripe_checkout_session_id"),
+  paymentMethod: text("payment_method"),
   ...timestamps,
 });
 
