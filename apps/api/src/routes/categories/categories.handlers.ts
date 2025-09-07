@@ -19,30 +19,46 @@ import type {
 export const getAllCategories: AppRouteHandler<GetAllCategoriesRoute> = async (
   c,
 ) => {
-  const categories = await db.query.category.findMany();
+  try {
+    const categories = await db.query.category.findMany();
 
-  return c.json(
-    successResponse(categories, "All categories retrieved successfully"),
-    HttpStatusCodes.OK,
-  );
+    return c.json(
+      successResponse(categories, "All categories retrieved successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    console.error("Error retrieving categories:", error);
+    return c.json(
+      errorResponse("INTERNAL_SERVER_ERROR", "Failed to retrieve categories"),
+      HttpStatusCodes.INTERNAL_SERVER_ERROR,
+    );
+  }
 };
 
 export const getCategory: AppRouteHandler<GetCategoryRoute> = async (c) => {
   const { id } = c.req.valid("param");
 
-  const categoryWithProducts = await getCategoryById(id);
+  try {
+    const categoryWithProducts = await getCategoryById(id);
 
-  if (!categoryWithProducts) {
+    if (!categoryWithProducts) {
+      return c.json(
+        errorResponse("NOT_FOUND", "Category not found"),
+        HttpStatusCodes.NOT_FOUND,
+      );
+    }
+
     return c.json(
-      errorResponse("NOT_FOUND", "Category not found"),
-      HttpStatusCodes.NOT_FOUND,
+      successResponse(categoryWithProducts, "Category retrieved successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    console.error("Error retrieving category:", error);
+    return c.json(
+      errorResponse("INTERNAL_SERVER_ERROR", "Failed to retrieve category"),
+      HttpStatusCodes.INTERNAL_SERVER_ERROR,
     );
   }
-
-  return c.json(
-    successResponse(categoryWithProducts, "Category retrieved successfully"),
-    HttpStatusCodes.OK,
-  );
 };
 
 export const createCategory: AppRouteHandler<CreateCategoryRoute> = async (
@@ -125,90 +141,98 @@ export const updateCategory: AppRouteHandler<UpdateCategoryRoute> = async (
   const { id } = c.req.valid("param");
   const categoryData = c.req.valid("json");
 
-  const trimmedName = categoryData.name.trim();
-  if (!trimmedName) {
-    return c.json(
-      errorResponse("INVALID_DATA", "Category name cannot be empty"),
-      HttpStatusCodes.BAD_REQUEST,
-    );
-  }
-
-  const categoryToUpdate = await getCategoryById(id);
-
-  if (!categoryToUpdate) {
-    return c.json(
-      errorResponse("NOT_FOUND", "Category not found"),
-      HttpStatusCodes.NOT_FOUND,
-    );
-  }
-
-  // Case-insensitive comparison
-  if (trimmedName.toLowerCase() === categoryToUpdate.name.toLowerCase()) {
-    return c.json(
-      successResponse(categoryToUpdate, "Category updated successfully"),
-      HttpStatusCodes.OK,
-    );
-  }
-
   try {
-    const result = await db.transaction(async (tx) => {
-      // Fetch all categories except current one and check in JavaScript
-      const allCategories = await tx.query.category.findMany({
-        where: (category, { ne }) => ne(category.id, id),
-        columns: { id: true, name: true },
-      });
-
-      // Check for case-insensitive name match
-      const existingCategory = allCategories.find(
-        (cat) => cat.name.toLowerCase() === trimmedName.toLowerCase(),
-      );
-
-      if (existingCategory) {
-        throw new Error("CATEGORY_EXISTS");
-      }
-
-      // Generate unique slug
-      const allCategoriesForSlug = await tx.query.category.findMany({
-        columns: { slug: true, id: true },
-      });
-
-      let slug = slugify(trimmedName, { lower: true, strict: true });
-      let counter = 0;
-
-      while (true) {
-        const finalSlug = counter === 0 ? slug : `${slug}-${counter}`;
-        const existingSlug = allCategoriesForSlug.find(
-          (cat) => cat.slug === finalSlug && cat.id !== id,
-        );
-
-        if (!existingSlug) {
-          slug = finalSlug;
-          break;
-        }
-        counter++;
-      }
-
-      const [updatedCategory] = await tx
-        .update(category)
-        .set({ name: trimmedName, slug })
-        .where(eq(category.id, id))
-        .returning();
-
-      return updatedCategory;
-    });
-
-    return c.json(
-      successResponse(result, "Category updated successfully"),
-      HttpStatusCodes.OK,
-    );
-  } catch (error) {
-    if (error instanceof Error && error.message === "CATEGORY_EXISTS") {
+    const trimmedName = categoryData.name.trim();
+    if (!trimmedName) {
       return c.json(
-        errorResponse("CONFLICT", "Category name already exists"),
-        HttpStatusCodes.CONFLICT,
+        errorResponse("INVALID_DATA", "Category name cannot be empty"),
+        HttpStatusCodes.BAD_REQUEST,
       );
     }
 
+    const categoryToUpdate = await getCategoryById(id);
+
+    if (!categoryToUpdate) {
+      return c.json(
+        errorResponse("NOT_FOUND", "Category not found"),
+        HttpStatusCodes.NOT_FOUND,
+      );
+    }
+
+    // Case-insensitive comparison
+    if (trimmedName.toLowerCase() === categoryToUpdate.name.toLowerCase()) {
+      return c.json(
+        successResponse(categoryToUpdate, "Category updated successfully"),
+        HttpStatusCodes.OK,
+      );
+    }
+
+    try {
+      const result = await db.transaction(async (tx) => {
+        // Fetch all categories except current one and check in JavaScript
+        const allCategories = await tx.query.category.findMany({
+          where: (category, { ne }) => ne(category.id, id),
+          columns: { id: true, name: true },
+        });
+
+        // Check for case-insensitive name match
+        const existingCategory = allCategories.find(
+          (cat) => cat.name.toLowerCase() === trimmedName.toLowerCase(),
+        );
+
+        if (existingCategory) {
+          throw new Error("CATEGORY_EXISTS");
+        }
+
+        // Generate unique slug
+        const allCategoriesForSlug = await tx.query.category.findMany({
+          columns: { slug: true, id: true },
+        });
+
+        let slug = slugify(trimmedName, { lower: true, strict: true });
+        let counter = 0;
+
+        while (true) {
+          const finalSlug = counter === 0 ? slug : `${slug}-${counter}`;
+          const existingSlug = allCategoriesForSlug.find(
+            (cat) => cat.slug === finalSlug && cat.id !== id,
+          );
+
+          if (!existingSlug) {
+            slug = finalSlug;
+            break;
+          }
+          counter++;
+        }
+
+        const [updatedCategory] = await tx
+          .update(category)
+          .set({ name: trimmedName, slug })
+          .where(eq(category.id, id))
+          .returning();
+
+        return updatedCategory;
+      });
+
+      return c.json(
+        successResponse(result, "Category updated successfully"),
+        HttpStatusCodes.OK,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message === "CATEGORY_EXISTS") {
+        return c.json(
+          errorResponse("CONFLICT", "Category name already exists"),
+          HttpStatusCodes.CONFLICT,
+        );
+      }
+
+      console.error("Error updating category:", error);
+      return c.json(
+        errorResponse("INTERNAL_SERVER_ERROR", "Failed to update category"),
+        HttpStatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  } catch (error) {
     console.error("Error updating category:", error);
     return c.json(
       errorResponse("INTERNAL_SERVER_ERROR", "Failed to update category"),

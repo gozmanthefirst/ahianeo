@@ -84,109 +84,123 @@ export const addToCart: AppRouteHandler<AddToCartRoute> = async (c) => {
   const user = c.get("user");
   const { productId, quantity } = c.req.valid("json");
 
-  // Validate product exists and get current stock
-  const product = await getProductById(productId);
+  try {
+    // Validate product exists and get current stock
+    const product = await getProductById(productId);
 
-  if (!product) {
-    return c.json(
-      errorResponse("NOT_FOUND", "Product not found"),
-      HttpStatusCodes.NOT_FOUND,
-    );
-  }
-
-  // Get or create user cart
-  const userCart = await getOrCreateUserCart(user.id);
-  if (!userCart) {
-    return c.json(
-      errorResponse("INTERNAL_SERVER_ERROR", "Failed to retrieve cart"),
-      HttpStatusCodes.INTERNAL_SERVER_ERROR,
-    );
-  }
-
-  // Check if product already in cart
-  const existingCartItem = await getCartItem(userCart.id, productId);
-
-  let totalRequestedQuantity = quantity;
-  if (existingCartItem) {
-    totalRequestedQuantity = existingCartItem.quantity + quantity;
-  }
-
-  const productStockQty = product.stockQuantity || 0;
-
-  // Validate stock availability
-  if (totalRequestedQuantity > productStockQty) {
-    let errorMessage: string;
-
-    if (productStockQty === 0) {
-      errorMessage = "Product is currently out of stock. Available: 0";
-    } else if (existingCartItem) {
-      const maxCanAdd = productStockQty - existingCartItem.quantity;
-      errorMessage = `Not enough stock available. You have ${existingCartItem.quantity} in cart, requested ${quantity} more, but only ${productStockQty} available total. Maximum you can add: ${maxCanAdd}`;
-    } else {
-      errorMessage = `Not enough stock available. Requested: ${quantity}, Available: ${productStockQty}. Maximum you can add: ${productStockQty}`;
+    if (!product) {
+      return c.json(
+        errorResponse("NOT_FOUND", "Product not found"),
+        HttpStatusCodes.NOT_FOUND,
+      );
     }
 
-    return c.json(
-      errorResponse("INSUFFICIENT_STOCK", errorMessage),
-      HttpStatusCodes.UNPROCESSABLE_ENTITY,
-    );
-  }
+    // Get or create user cart
+    const userCart = await getOrCreateUserCart(user.id);
+    if (!userCart) {
+      return c.json(
+        errorResponse("INTERNAL_SERVER_ERROR", "Failed to retrieve cart"),
+        HttpStatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
 
-  // Add/update cart item in transaction
-  await db.transaction(async () => {
+    // Check if product already in cart
+    const existingCartItem = await getCartItem(userCart.id, productId);
+
+    let totalRequestedQuantity = quantity;
     if (existingCartItem) {
-      await updateCartItemQuantity(existingCartItem.id, totalRequestedQuantity);
-    } else {
-      await addCartItem(userCart.id, productId, quantity);
+      totalRequestedQuantity = existingCartItem.quantity + quantity;
     }
-  });
 
-  const updatedCart = await getUserCartWithItems(user.id);
+    const productStockQty = product.stockQuantity || 0;
 
-  if (!updatedCart) {
+    // Validate stock availability
+    if (totalRequestedQuantity > productStockQty) {
+      let errorMessage: string;
+
+      if (productStockQty === 0) {
+        errorMessage = "Product is currently out of stock. Available: 0";
+      } else if (existingCartItem) {
+        const maxCanAdd = productStockQty - existingCartItem.quantity;
+        errorMessage = `Not enough stock available. You have ${existingCartItem.quantity} in cart, requested ${quantity} more, but only ${productStockQty} available total. Maximum you can add: ${maxCanAdd}`;
+      } else {
+        errorMessage = `Not enough stock available. Requested: ${quantity}, Available: ${productStockQty}. Maximum you can add: ${productStockQty}`;
+      }
+
+      return c.json(
+        errorResponse("INSUFFICIENT_STOCK", errorMessage),
+        HttpStatusCodes.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    // Add/update cart item in transaction
+    await db.transaction(async () => {
+      if (existingCartItem) {
+        await updateCartItemQuantity(
+          existingCartItem.id,
+          totalRequestedQuantity,
+        );
+      } else {
+        await addCartItem(userCart.id, productId, quantity);
+      }
+    });
+
+    const updatedCart = await getUserCartWithItems(user.id);
+
+    if (!updatedCart) {
+      return c.json(
+        errorResponse(
+          "INTERNAL_SERVER_ERROR",
+          "Failed to retrieve updated cart",
+        ),
+        HttpStatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    // Calculate totals
+    let totalItems = 0;
+    let totalAmount = 0;
+
+    const cartItemsWithSubtotals = updatedCart.cartItems.map((item) => {
+      const subAmount = (
+        parseFloat(item.product.price) * item.quantity
+      ).toFixed(2);
+      totalItems += item.quantity;
+      totalAmount += parseFloat(subAmount);
+
+      return {
+        id: item.id,
+        cartId: item.cartId,
+        productId: item.productId,
+        quantity: item.quantity,
+        subAmount,
+        product: item.product,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      };
+    });
+
+    const cartResponse = {
+      id: updatedCart.id,
+      userId: updatedCart.userId,
+      cartItems: cartItemsWithSubtotals,
+      totalItems,
+      totalAmount: totalAmount.toFixed(2),
+      createdAt: updatedCart.createdAt,
+      updatedAt: updatedCart.updatedAt,
+    };
+
     return c.json(
-      errorResponse("INTERNAL_SERVER_ERROR", "Failed to retrieve updated cart"),
+      successResponse(cartResponse, "Product added to cart successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    console.error("Error adding product to cart:", error);
+    return c.json(
+      errorResponse("INTERNAL_SERVER_ERROR", "Failed to add product to cart"),
       HttpStatusCodes.INTERNAL_SERVER_ERROR,
     );
   }
-
-  // Calculate totals
-  let totalItems = 0;
-  let totalAmount = 0;
-
-  const cartItemsWithSubtotals = updatedCart.cartItems.map((item) => {
-    const subAmount = (parseFloat(item.product.price) * item.quantity).toFixed(
-      2,
-    );
-    totalItems += item.quantity;
-    totalAmount += parseFloat(subAmount);
-
-    return {
-      id: item.id,
-      cartId: item.cartId,
-      productId: item.productId,
-      quantity: item.quantity,
-      subAmount,
-      product: item.product,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-    };
-  });
-
-  const cartResponse = {
-    id: updatedCart.id,
-    userId: updatedCart.userId,
-    cartItems: cartItemsWithSubtotals,
-    totalItems,
-    totalAmount: totalAmount.toFixed(2),
-    createdAt: updatedCart.createdAt,
-    updatedAt: updatedCart.updatedAt,
-  };
-
-  return c.json(
-    successResponse(cartResponse, "Product added to cart successfully"),
-    HttpStatusCodes.OK,
-  );
 };
 
 export const updateCartItem: AppRouteHandler<UpdateCartItemRoute> = async (
@@ -196,95 +210,109 @@ export const updateCartItem: AppRouteHandler<UpdateCartItemRoute> = async (
   const { id } = c.req.valid("param");
   const { quantity } = c.req.valid("json");
 
-  // Get cart item with cart and product details
-  const cartItemWithDetails = await getCartItemWithDetails(id);
+  try {
+    // Get cart item with cart and product details
+    const cartItemWithDetails = await getCartItemWithDetails(id);
 
-  if (!cartItemWithDetails) {
-    return c.json(
-      errorResponse("NOT_FOUND", "Cart item not found"),
-      HttpStatusCodes.NOT_FOUND,
-    );
-  }
-
-  // Verify ownership - cart item belongs to user's cart
-  if (cartItemWithDetails.cart.userId !== user.id) {
-    return c.json(
-      errorResponse("FORBIDDEN", "You can only update items in your own cart"),
-      HttpStatusCodes.FORBIDDEN,
-    );
-  }
-
-  // Validate stock availability (only if quantity is increasing)
-  if (quantity > cartItemWithDetails.quantity) {
-    const productStockQty = cartItemWithDetails.product.stockQuantity || 0;
-
-    if (quantity > productStockQty) {
-      let errorMessage: string;
-
-      if (productStockQty === 0) {
-        errorMessage = "Product is currently out of stock. Available: 0";
-      } else {
-        errorMessage = `Not enough stock available. Requested: ${quantity}, Available: ${productStockQty}. Maximum quantity: ${productStockQty}`;
-      }
-
+    if (!cartItemWithDetails) {
       return c.json(
-        errorResponse("INSUFFICIENT_STOCK", errorMessage),
-        HttpStatusCodes.UNPROCESSABLE_ENTITY,
+        errorResponse("NOT_FOUND", "Cart item not found"),
+        HttpStatusCodes.NOT_FOUND,
       );
     }
-  }
 
-  // Update cart item quantity in transaction
-  await db.transaction(async () => {
-    await updateCartItemQuantity(id, quantity);
-  });
+    // Verify ownership - cart item belongs to user's cart
+    if (cartItemWithDetails.cart.userId !== user.id) {
+      return c.json(
+        errorResponse(
+          "FORBIDDEN",
+          "You can only update items in your own cart",
+        ),
+        HttpStatusCodes.FORBIDDEN,
+      );
+    }
 
-  // Fetch updated cart with all relations and calculations
-  const updatedCart = await getUserCartWithItems(user.id);
-  if (!updatedCart) {
+    // Validate stock availability (only if quantity is increasing)
+    if (quantity > cartItemWithDetails.quantity) {
+      const productStockQty = cartItemWithDetails.product.stockQuantity || 0;
+
+      if (quantity > productStockQty) {
+        let errorMessage: string;
+
+        if (productStockQty === 0) {
+          errorMessage = "Product is currently out of stock. Available: 0";
+        } else {
+          errorMessage = `Not enough stock available. Requested: ${quantity}, Available: ${productStockQty}. Maximum quantity: ${productStockQty}`;
+        }
+
+        return c.json(
+          errorResponse("INSUFFICIENT_STOCK", errorMessage),
+          HttpStatusCodes.UNPROCESSABLE_ENTITY,
+        );
+      }
+    }
+
+    // Update cart item quantity in transaction
+    await db.transaction(async () => {
+      await updateCartItemQuantity(id, quantity);
+    });
+
+    // Fetch updated cart with all relations and calculations
+    const updatedCart = await getUserCartWithItems(user.id);
+    if (!updatedCart) {
+      return c.json(
+        errorResponse(
+          "INTERNAL_SERVER_ERROR",
+          "Failed to retrieve updated cart",
+        ),
+        HttpStatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    // Calculate totals
+    let totalItems = 0;
+    let totalAmount = 0;
+
+    const cartItemsWithSubtotals = updatedCart.cartItems.map((item) => {
+      const subAmount = (
+        parseFloat(item.product.price) * item.quantity
+      ).toFixed(2);
+      totalItems += item.quantity;
+      totalAmount += parseFloat(subAmount);
+
+      return {
+        id: item.id,
+        cartId: item.cartId,
+        productId: item.productId,
+        quantity: item.quantity,
+        subAmount,
+        product: item.product,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      };
+    });
+
+    const cartResponse = {
+      id: updatedCart.id,
+      userId: updatedCart.userId,
+      cartItems: cartItemsWithSubtotals,
+      totalItems,
+      totalAmount: totalAmount.toFixed(2),
+      createdAt: updatedCart.createdAt,
+      updatedAt: updatedCart.updatedAt,
+    };
+
     return c.json(
-      errorResponse("INTERNAL_SERVER_ERROR", "Failed to retrieve updated cart"),
+      successResponse(cartResponse, "Cart item updated successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    console.error("Error updating cart item:", error);
+    return c.json(
+      errorResponse("INTERNAL_SERVER_ERROR", "Failed to update cart item"),
       HttpStatusCodes.INTERNAL_SERVER_ERROR,
     );
   }
-
-  // Calculate totals
-  let totalItems = 0;
-  let totalAmount = 0;
-
-  const cartItemsWithSubtotals = updatedCart.cartItems.map((item) => {
-    const subAmount = (parseFloat(item.product.price) * item.quantity).toFixed(
-      2,
-    );
-    totalItems += item.quantity;
-    totalAmount += parseFloat(subAmount);
-
-    return {
-      id: item.id,
-      cartId: item.cartId,
-      productId: item.productId,
-      quantity: item.quantity,
-      subAmount,
-      product: item.product,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-    };
-  });
-
-  const cartResponse = {
-    id: updatedCart.id,
-    userId: updatedCart.userId,
-    cartItems: cartItemsWithSubtotals,
-    totalItems,
-    totalAmount: totalAmount.toFixed(2),
-    createdAt: updatedCart.createdAt,
-    updatedAt: updatedCart.updatedAt,
-  };
-
-  return c.json(
-    successResponse(cartResponse, "Cart item updated successfully"),
-    HttpStatusCodes.OK,
-  );
 };
 
 export const removeCartItem: AppRouteHandler<DeleteCartItemRoute> = async (
@@ -293,111 +321,130 @@ export const removeCartItem: AppRouteHandler<DeleteCartItemRoute> = async (
   const user = c.get("user");
   const { id } = c.req.valid("param");
 
-  // Get cart item with cart details for ownership validation
-  const cartItemWithDetails = await getCartItemWithDetails(id);
+  try {
+    // Get cart item with cart details for ownership validation
+    const cartItemWithDetails = await getCartItemWithDetails(id);
 
-  if (!cartItemWithDetails) {
+    if (!cartItemWithDetails) {
+      return c.json(
+        errorResponse("NOT_FOUND", "Cart item not found"),
+        HttpStatusCodes.NOT_FOUND,
+      );
+    }
+
+    // Verify ownership - cart item belongs to user's cart
+    if (cartItemWithDetails.cart.userId !== user.id) {
+      return c.json(
+        errorResponse(
+          "FORBIDDEN",
+          "You can only remove items from your own cart",
+        ),
+        HttpStatusCodes.FORBIDDEN,
+      );
+    }
+
+    // Delete cart item in transaction
+    await db.transaction(async () => {
+      await deleteCartItem(id);
+    });
+
+    // Fetch updated cart with all relations and calculations
+    const updatedCart = await getUserCartWithItems(user.id);
+    if (!updatedCart) {
+      return c.json(
+        errorResponse(
+          "INTERNAL_SERVER_ERROR",
+          "Failed to retrieve updated cart",
+        ),
+        HttpStatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    // Calculate totals
+    let totalItems = 0;
+    let totalAmount = 0;
+
+    const cartItemsWithSubtotals = updatedCart.cartItems.map((item) => {
+      const subAmount = (
+        parseFloat(item.product.price) * item.quantity
+      ).toFixed(2);
+      totalItems += item.quantity;
+      totalAmount += parseFloat(subAmount);
+
+      return {
+        id: item.id,
+        cartId: item.cartId,
+        productId: item.productId,
+        quantity: item.quantity,
+        subAmount,
+        product: item.product,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      };
+    });
+
+    const cartResponse = {
+      id: updatedCart.id,
+      userId: updatedCart.userId,
+      cartItems: cartItemsWithSubtotals,
+      totalItems,
+      totalAmount: totalAmount.toFixed(2),
+      createdAt: updatedCart.createdAt,
+      updatedAt: updatedCart.updatedAt,
+    };
+
     return c.json(
-      errorResponse("NOT_FOUND", "Cart item not found"),
-      HttpStatusCodes.NOT_FOUND,
+      successResponse(cartResponse, "Cart item removed successfully"),
+      HttpStatusCodes.OK,
     );
-  }
-
-  // Verify ownership - cart item belongs to user's cart
-  if (cartItemWithDetails.cart.userId !== user.id) {
+  } catch (error) {
+    console.error("Error removing cart item:", error);
     return c.json(
-      errorResponse(
-        "FORBIDDEN",
-        "You can only remove items from your own cart",
-      ),
-      HttpStatusCodes.FORBIDDEN,
-    );
-  }
-
-  // Delete cart item in transaction
-  await db.transaction(async () => {
-    await deleteCartItem(id);
-  });
-
-  // Fetch updated cart with all relations and calculations
-  const updatedCart = await getUserCartWithItems(user.id);
-  if (!updatedCart) {
-    return c.json(
-      errorResponse("INTERNAL_SERVER_ERROR", "Failed to retrieve updated cart"),
+      errorResponse("INTERNAL_SERVER_ERROR", "Failed to remove cart item"),
       HttpStatusCodes.INTERNAL_SERVER_ERROR,
     );
   }
-
-  // Calculate totals
-  let totalItems = 0;
-  let totalAmount = 0;
-
-  const cartItemsWithSubtotals = updatedCart.cartItems.map((item) => {
-    const subAmount = (parseFloat(item.product.price) * item.quantity).toFixed(
-      2,
-    );
-    totalItems += item.quantity;
-    totalAmount += parseFloat(subAmount);
-
-    return {
-      id: item.id,
-      cartId: item.cartId,
-      productId: item.productId,
-      quantity: item.quantity,
-      subAmount,
-      product: item.product,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-    };
-  });
-
-  const cartResponse = {
-    id: updatedCart.id,
-    userId: updatedCart.userId,
-    cartItems: cartItemsWithSubtotals,
-    totalItems,
-    totalAmount: totalAmount.toFixed(2),
-    createdAt: updatedCart.createdAt,
-    updatedAt: updatedCart.updatedAt,
-  };
-
-  return c.json(
-    successResponse(cartResponse, "Cart item removed successfully"),
-    HttpStatusCodes.OK,
-  );
 };
 
 export const clearUserCart: AppRouteHandler<ClearCartRoute> = async (c) => {
   const user = c.get("user");
 
-  // Get or create user cart
-  const userCart = await getOrCreateUserCart(user.id);
+  try {
+    // Get or create user cart
+    const userCart = await getOrCreateUserCart(user.id);
 
-  if (!userCart) {
+    if (!userCart) {
+      return c.json(
+        errorResponse("INTERNAL_SERVER_ERROR", "Failed to retrieve cart"),
+        HttpStatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    // Clear all cart items in transaction
+    await db.transaction(async () => {
+      await clearCartItems(userCart.id);
+    });
+
+    // Return empty cart structure
+    const emptyCartResponse = {
+      id: userCart.id,
+      userId: userCart.userId,
+      cartItems: [],
+      totalItems: 0,
+      totalAmount: "0.00",
+      createdAt: userCart.createdAt,
+      updatedAt: userCart.updatedAt,
+    };
+
     return c.json(
-      errorResponse("INTERNAL_SERVER_ERROR", "Failed to retrieve cart"),
+      successResponse(emptyCartResponse, "Cart cleared successfully"),
+      HttpStatusCodes.OK,
+    );
+  } catch (error) {
+    console.error("Error clearing cart:", error);
+    return c.json(
+      errorResponse("INTERNAL_SERVER_ERROR", "Failed to clear cart"),
       HttpStatusCodes.INTERNAL_SERVER_ERROR,
     );
   }
-
-  // Clear all cart items in transaction
-  await db.transaction(async () => {
-    await clearCartItems(userCart.id);
-  });
-
-  // Return empty cart structure
-  const emptyCartResponse = {
-    id: userCart.id,
-    userId: userCart.userId,
-    cartItems: [],
-    totalItems: 0,
-    totalAmount: "0.00",
-    createdAt: userCart.createdAt,
-    updatedAt: userCart.updatedAt,
-  };
-
-  return c.json(
-    successResponse(emptyCartResponse, "Cart cleared successfully"),
-    HttpStatusCodes.OK,
-  );
 };
