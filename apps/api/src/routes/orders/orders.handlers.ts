@@ -192,7 +192,7 @@ export const createCheckout: AppRouteHandler<CreateCheckoutRoute> = async (
         allowed_countries: ["US", "CA", "GB", "AU", "NG", "GH"],
       },
       billing_address_collection: "required",
-      expires_at: Math.floor(Date.now() / 1000) + 15 * 60,
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
     });
 
     // Update order with checkout session ID since it was set as null when
