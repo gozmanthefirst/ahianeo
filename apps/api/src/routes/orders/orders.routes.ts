@@ -52,12 +52,13 @@ export const createCheckout = createRoute({
         insufficientStock: {
           summary: "Insufficient stock",
           code: "INSUFFICIENT_STOCK",
-          details: "Not enough stock available for some items in your cart.",
+          details: `Not enough stock for "Product". Requested: 5, Available: 3`,
         },
-        productNotFound: {
-          summary: "Product not found",
+        productNoLongerExists: {
+          summary: "Product no longer exists",
           code: "INVALID_CART_STATE",
-          details: "Some products in your cart are no longer available.",
+          details:
+            'Product with ID "123e4567-e89b-12d3-a456-426614174000" no longer exists',
         },
       },
     }),

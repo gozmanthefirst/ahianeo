@@ -12,7 +12,7 @@ export const generateOrderNumber = (): string => {
 };
 
 /**
- * Create a new order (simplified for Stripe Checkout)
+ * Create a new order
  */
 export const createOrder = async (
   userId: string,

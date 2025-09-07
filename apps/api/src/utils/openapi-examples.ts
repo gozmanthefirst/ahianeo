@@ -201,9 +201,8 @@ export const orderExamples = {
       status: "pending",
       paymentStatus: "pending",
       totalAmount: "39.98",
-      stripeCheckoutSessionId: "cs_1234567890abcdef", // Updated field name
+      stripeCheckoutSessionId: "cs_1234567890abcdef",
       paymentMethod: null,
-      // Removed shippingAddress and billingAddress - Stripe Checkout handles these
       orderItems: [
         {
           id: "456e7890-e12b-34c5-d678-901234567890",
@@ -219,8 +218,8 @@ export const orderExamples = {
       createdAt: "2024-01-01T00:00:00Z",
       updatedAt: "2024-01-01T00:00:00Z",
     },
-    checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_1234567890abcdef", // Updated to checkoutUrl
-    checkoutSessionId: "cs_1234567890abcdef", // Updated field name
+    checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_1234567890abcdef",
+    checkoutSessionId: "cs_1234567890abcdef",
     stripePublishableKey: "pk_test_abc123def456ghi789jkl012mno345pqr678stu901",
   },
 };
