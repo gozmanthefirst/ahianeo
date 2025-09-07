@@ -6,7 +6,6 @@ import { stripe } from "@/lib/stripe";
 import type { AppRouteHandler } from "@/lib/types";
 import { clearCartItemsByUserId } from "@/queries/cart-queries";
 import {
-  getOrderByStripePaymentIntentId, // Keep for backward compatibility
   getOrderByStripeSessionId,
   restoreStock,
   updateOrderStatus,
@@ -23,13 +22,16 @@ export const handleStripeWebhook: AppRouteHandler<StripeWebhookRoute> = async (
 
   if (!signature) {
     return c.json(
-      errorResponse("BAD_REQUEST", "Missing Stripe signature"),
+      errorResponse(
+        "BAD_REQUEST",
+        "Missing Stripe signature in request headers",
+      ),
       HttpStatusCodes.BAD_REQUEST,
     );
   }
 
   try {
-    // Use ASYNC webhook verification
+    // Webhook verification
     const event = await stripe.webhooks.constructEventAsync(
       body,
       signature,
@@ -40,7 +42,7 @@ export const handleStripeWebhook: AppRouteHandler<StripeWebhookRoute> = async (
 
     // Handle different event types
     switch (event.type) {
-      // Checkout Session Events (Primary)
+      // Checkout Session Events
       case "checkout.session.completed":
         await handleCheckoutSuccess(
           event.data.object as Stripe.Checkout.Session,
@@ -53,17 +55,10 @@ export const handleStripeWebhook: AppRouteHandler<StripeWebhookRoute> = async (
         );
         break;
 
-      // PaymentIntent Events (Keep for backward compatibility)
-      case "payment_intent.succeeded":
-        await handlePaymentSuccess(event.data.object as Stripe.PaymentIntent);
-        break;
-
-      case "payment_intent.payment_failed":
-        await handlePaymentFailure(event.data.object as Stripe.PaymentIntent);
-        break;
-
-      case "payment_intent.canceled":
-        await handlePaymentCanceled(event.data.object as Stripe.PaymentIntent);
+      case "checkout.session.async_payment_failed":
+        await handleCheckoutCancelled(
+          event.data.object as Stripe.Checkout.Session,
+        );
         break;
 
       default:
@@ -91,7 +86,6 @@ const handleCheckoutSuccess = async (session: Stripe.Checkout.Session) => {
 
   try {
     await db.transaction(async () => {
-      // Get the order by session ID
       const order = await getOrderByStripeSessionId(session.id);
 
       if (!order) {
@@ -99,21 +93,21 @@ const handleCheckoutSuccess = async (session: Stripe.Checkout.Session) => {
         return;
       }
 
-      // Update order status to COMPLETED and payment status to paid
+      // Update order status to completed and payment status to paid
       await updateOrderStatus(
         order.id,
-        "completed", // ← CHANGED FROM "processing" TO "completed"
-        "paid", // Payment status
-        session.payment_method_types?.[0] || "card", // Payment method
+        "completed",
+        "paid",
+        session.payment_method_types?.[0] || "card",
       );
 
-      // Clear user's cart - payment successful
+      // Clear user's cart
       if (order.userId) {
         await clearCartItemsByUserId(order.userId);
         console.log(`Cart cleared for user: ${order.userId}`);
       }
 
-      console.log(`Order ${order.orderNumber} marked as paid and completed`); // ← Updated log message
+      console.log(`Order ${order.orderNumber} marked as paid and completed`);
     });
   } catch (error) {
     console.error("Error handling checkout success:", error);
@@ -129,7 +123,6 @@ const handleCheckoutExpired = async (session: Stripe.Checkout.Session) => {
 
   try {
     await db.transaction(async () => {
-      // Get the order by session ID
       const order = await getOrderByStripeSessionId(session.id);
 
       if (!order) {
@@ -137,12 +130,8 @@ const handleCheckoutExpired = async (session: Stripe.Checkout.Session) => {
         return;
       }
 
-      // Update order status to cancelled
-      await updateOrderStatus(
-        order.id,
-        "cancelled", // Order status
-        "failed", // Payment status
-      );
+      // Update order status to cancelled and payment status to failed
+      await updateOrderStatus(order.id, "cancelled", "failed");
 
       // RESTORE RESERVED STOCK
       const stockToRestore = order.orderItems.map((item) => ({
@@ -160,90 +149,25 @@ const handleCheckoutExpired = async (session: Stripe.Checkout.Session) => {
   }
 };
 
-// Keep existing PaymentIntent handlers for backward compatibility
-const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
-  console.log(`Processing payment success for: ${paymentIntent.id}`);
+/**
+ * Handle cancelled checkout session (payment failure)
+ */
+const handleCheckoutCancelled = async (session: Stripe.Checkout.Session) => {
+  console.log(`Processing checkout cancellation for session: ${session.id}`);
 
   try {
     await db.transaction(async () => {
-      const order = await getOrderByStripePaymentIntentId(paymentIntent.id);
+      const order = await getOrderByStripeSessionId(session.id);
 
       if (!order) {
-        console.error(
-          `Order not found for payment intent: ${paymentIntent.id}`,
-        );
+        console.error(`Order not found for checkout session: ${session.id}`);
         return;
       }
 
-      await updateOrderStatus(
-        order.id,
-        "processing",
-        "paid",
-        getPaymentMethodType(paymentIntent),
-      );
-
-      if (order.userId) {
-        await clearCartItemsByUserId(order.userId);
-        console.log(`Cart cleared for user: ${order.userId}`);
-      }
-
-      console.log(`Order ${order.orderNumber} marked as paid and processing`);
-    });
-  } catch (error) {
-    console.error("Error handling payment success:", error);
-    throw error;
-  }
-};
-
-const handlePaymentFailure = async (paymentIntent: Stripe.PaymentIntent) => {
-  console.log(`Processing payment failure for: ${paymentIntent.id}`);
-
-  try {
-    await db.transaction(async () => {
-      const order = await getOrderByStripePaymentIntentId(paymentIntent.id);
-
-      if (!order) {
-        console.error(
-          `Order not found for payment intent: ${paymentIntent.id}`,
-        );
-        return;
-      }
-
-      await updateOrderStatus(order.id, "pending", "failed");
-
-      const stockToRestore = order.orderItems.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-      }));
-
-      await restoreStock(stockToRestore);
-
-      console.log(
-        `Stock restored for order ${order.orderNumber} due to payment failure`,
-      );
-    });
-  } catch (error) {
-    console.error("Error handling payment failure:", error);
-    throw error;
-  }
-};
-
-const handlePaymentCanceled = async (paymentIntent: Stripe.PaymentIntent) => {
-  console.log(`Processing payment cancellation for: ${paymentIntent.id}`);
-
-  try {
-    await db.transaction(async () => {
-      const order = await getOrderByStripePaymentIntentId(paymentIntent.id);
-
-      if (!order) {
-        console.error(
-          `Order not found for payment intent: ${paymentIntent.id}`,
-        );
-        return;
-      }
-
+      // Update order status to cancelled and payment status to failed
       await updateOrderStatus(order.id, "cancelled", "failed");
 
+      // RESTORE RESERVED STOCK
       const stockToRestore = order.orderItems.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
@@ -251,20 +175,10 @@ const handlePaymentCanceled = async (paymentIntent: Stripe.PaymentIntent) => {
 
       await restoreStock(stockToRestore);
 
-      console.log(`Stock restored for cancelled order ${order.orderNumber}`);
+      console.log(`Stock restored for cancelled session ${order.orderNumber}`);
     });
   } catch (error) {
-    console.error("Error handling payment cancellation:", error);
+    console.error("Error handling checkout cancellation:", error);
     throw error;
   }
-};
-
-const getPaymentMethodType = (paymentIntent: Stripe.PaymentIntent): string => {
-  if (
-    paymentIntent.payment_method_types &&
-    paymentIntent.payment_method_types.length > 0
-  ) {
-    return paymentIntent.payment_method_types[0];
-  }
-  return "unknown";
 };

@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import HttpStatusCodes from "@/utils/http-status-codes";
 import {
-  genericErrorContent,
+  errorContent,
   serverErrorContent,
   successContent,
 } from "@/utils/openapi-helpers";
@@ -32,11 +32,21 @@ export const stripeWebhook = createRoute({
         data: { received: true },
       },
     }),
-    [HttpStatusCodes.BAD_REQUEST]: genericErrorContent(
-      "BAD_REQUEST",
-      "Invalid webhook",
-      "Invalid webhook signature or payload",
-    ),
+    [HttpStatusCodes.BAD_REQUEST]: errorContent({
+      description: "Invalid request data",
+      examples: {
+        invalidWebhook: {
+          summary: "Invalid webhook",
+          code: "BAD_REQUEST",
+          details: "Invalid webhook signature or payload",
+        },
+        missingStripeSignature: {
+          summary: "Missing Stripe signature",
+          code: "BAD_REQUEST",
+          details: "Missing Stripe signature in request headers",
+        },
+      },
+    }),
     [HttpStatusCodes.INTERNAL_SERVER_ERROR]: serverErrorContent(),
   },
 });
