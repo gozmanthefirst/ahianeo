@@ -1,6 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { ProductExtendedSchema } from "@repo/db/validators/product-validators";
 
+import { ALLOWED_FILE_TYPES } from "@/lib/file";
 import { CreateProductSchema, UpdateProductSchema } from "@/lib/schemas";
 import HttpStatusCodes from "@/utils/http-status-codes";
 import { authExamples, productsExamples } from "@/utils/openapi-examples";
@@ -163,8 +164,7 @@ export const createProduct = createRoute({
         fileTypeError: {
           summary: "Invalid file type",
           code: "INVALID_FILE",
-          details:
-            "Image 1: File type must be one of: image/jpeg, image/png, image/webp",
+          details: `Image 1: File type must be one of: ${ALLOWED_FILE_TYPES.join(", ")}`,
         },
       },
     }),
@@ -282,8 +282,7 @@ export const updateProduct = createRoute({
         fileTypeError: {
           summary: "Invalid file type",
           code: "INVALID_FILE",
-          details:
-            "Image 1: File type must be one of: image/jpeg, image/png, image/webp",
+          details: `Image 1: File type must be one of: ${ALLOWED_FILE_TYPES.join(", ")}`,
         },
       },
     }),

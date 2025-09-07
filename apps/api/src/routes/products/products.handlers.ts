@@ -253,7 +253,7 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
   // Validate and transform form data
   const validationErrors: Record<string, string> = {};
 
-  // Validate and transform price (optional)
+  // Validate and transform price (if provided)
   let price: string | undefined;
   if (rawFormData.price !== undefined) {
     const priceNum = Number.parseFloat(rawFormData.price);
@@ -264,7 +264,7 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
     }
   }
 
-  // Validate and transform stockQuantity (optional)
+  // Validate and transform stockQuantity (if provided)
   let stockQuantity: number | undefined;
   if (rawFormData.stockQuantity !== undefined) {
     const stockNum = Number.parseInt(rawFormData.stockQuantity, 10);
@@ -276,7 +276,7 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
     }
   }
 
-  // Validate and transform sizes using Zod (optional)
+  // Validate and transform sizes using Zod (if provided)
   let sizes: { name: string; inStock: boolean }[] | undefined;
   if (rawFormData.sizes !== undefined) {
     const sizesResult = parseJsonField(
@@ -291,7 +291,7 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
     }
   }
 
-  // Validate and transform colors using Zod (optional)
+  // Validate and transform colors using Zod (if provided)
   let colors: { name: string; inStock: boolean }[] | undefined;
   if (rawFormData.colors !== undefined) {
     const colorsResult = parseJsonField(
@@ -306,7 +306,7 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
     }
   }
 
-  // Validate and transform categoryIds using Zod (optional)
+  // Validate and transform categoryIds using Zod (if provided)
   let categoryIds: string[] | undefined;
   if (rawFormData.categoryIds !== undefined) {
     const categoryIdsResult = parseJsonField(
@@ -321,7 +321,7 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
     }
   }
 
-  // Validate and transform keepImageKeys (optional)
+  // Validate and transform keepImageKeys (if provided)
   let keepImageKeys: string[] = [];
   if (rawFormData.keepImageKeys !== undefined) {
     const keepImageKeysResult = parseJsonField(
@@ -354,7 +354,7 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
     keepImageKeys = existingProduct.images.map((img) => img.key);
   }
 
-  // Validate new images (optional)
+  // Validate new images (if provided)
   const newImages = rawFormData.newImages || [];
   if (newImages.length > 0) {
     try {
