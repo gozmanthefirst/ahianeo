@@ -34,9 +34,10 @@ export const CreateProductSchema = z.object({
         'JSON stringified array of category ID strings, e.g. ["123e4567-e89b-12d3-a456-426614174000"]',
     }),
   images: z
-    .array(z.instanceof(File))
-    .min(1)
-    .max(3)
+    .union([z.instanceof(File), z.array(z.instanceof(File)).min(1).max(3)])
+    .transform((val) => {
+      return Array.isArray(val) ? val : [val];
+    })
     .openapi({
       type: "array",
       items: { type: "string", format: "binary" },
@@ -82,12 +83,15 @@ export const UpdateProductSchema = z.object({
     description: "JSON array of image keys to keep",
   }),
   newImages: z
-    .array(z.instanceof(File))
-    .max(3)
+    .union([z.instanceof(File), z.array(z.instanceof(File)).min(1).max(3)])
+    .transform((val) => {
+      return Array.isArray(val) ? val : [val];
+    })
     .optional()
     .openapi({
       type: "array",
       items: { type: "string", format: "binary" },
+      minItems: 1,
       maxItems: 3,
     }),
 });
