@@ -93,6 +93,14 @@ export const createProduct: AppRouteHandler<CreateProductRoute> = async (c) => {
     sizes = sizesResult.data;
   }
 
+  if (sizes && sizes.length > 0) {
+    const sizeNames = sizes.map((s) => s.name.toLowerCase());
+    const uniqueSizeNames = new Set(sizeNames);
+    if (sizeNames.length !== uniqueSizeNames.size) {
+      validationErrors.sizes = "Size names must be unique (case-insensitive)";
+    }
+  }
+
   // Validate and transform colors using Zod
   const colorsResult = parseJsonField(
     rawFormData.colors,
@@ -104,6 +112,14 @@ export const createProduct: AppRouteHandler<CreateProductRoute> = async (c) => {
     validationErrors.colors = colorsResult.error;
   } else {
     colors = colorsResult.data;
+  }
+
+  if (colors && colors.length > 0) {
+    const colorNames = colors.map((c) => c.name.toLowerCase());
+    const uniqueColorNames = new Set(colorNames);
+    if (colorNames.length !== uniqueColorNames.size) {
+      validationErrors.colors = "Color names must be unique (case-insensitive)";
+    }
   }
 
   // Validate and transform categoryIds using Zod
@@ -291,6 +307,14 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
     }
   }
 
+  if (sizes && sizes.length > 0) {
+    const sizeNames = sizes.map((s) => s.name.toLowerCase());
+    const uniqueSizeNames = new Set(sizeNames);
+    if (sizeNames.length !== uniqueSizeNames.size) {
+      validationErrors.sizes = "Size names must be unique (case-insensitive)";
+    }
+  }
+
   // Validate and transform colors using Zod (if provided)
   let colors: { name: string; inStock: boolean }[] | undefined;
   if (rawFormData.colors !== undefined) {
@@ -303,6 +327,14 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
       validationErrors.colors = colorsResult.error;
     } else {
       colors = colorsResult.data;
+    }
+  }
+
+  if (colors && colors.length > 0) {
+    const colorNames = colors.map((c) => c.name.toLowerCase());
+    const uniqueColorNames = new Set(colorNames);
+    if (colorNames.length !== uniqueColorNames.size) {
+      validationErrors.colors = "Color names must be unique (case-insensitive)";
     }
   }
 
