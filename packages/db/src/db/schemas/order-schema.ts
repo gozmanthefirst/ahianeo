@@ -26,7 +26,6 @@ export const order = pgTable("order", {
   paymentMethod: text("payment_method"),
   ...timestamps,
 });
-
 export const orderRelations = relations(order, ({ many, one }) => ({
   customer: one(user, {
     fields: [order.userId],
@@ -48,7 +47,6 @@ export const orderItem = pgTable("order_item", {
   subTotal: numeric("sub_total", { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
-
 export const orderItemRelations = relations(orderItem, ({ one }) => ({
   order: one(order, {
     fields: [orderItem.orderId],

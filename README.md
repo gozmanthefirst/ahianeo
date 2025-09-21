@@ -1,7 +1,15 @@
 # Ahianeo
 
-Ahianeo is a eCommerce website I'm building for the major purpose of showing that I can indeed build one. When completed, it'll have an API, an admin panel, and a storefront. I'll be building it using Hono and TanStack Start. If I use other tech, I'll indicate them here later.
+Ahianeo is a eCommerce website I'm building for the major purpose of showing that I can indeed build one. When everything's completed, it'll have an API, an admin panel, and a storefront.
+
+## Stack
+
+Backend is built with Hono. Admin and storefront will be Next.js and/or TanStack Start. Stripe handles checkouts and payments. Database is PostgreSQL with Drizzle as the ORM. Everything (API, admin, storefront) gets deployed with Docker.
 
 ## What are the features?
 
-Sell and buy stuff. Pretty much most of the basic stuff you'd do on an eCommerce site. Admins sell stuff. Customers buy stuff. On the admin panel, if you're the superadmin, you'd be able to create admins that can in turn manage customers, products etc. Yunno, all the good stuff. The entire project will be as lightweight as it can possibly be without sacrificing basic features. I'm not building the next Amazon here.
+All the good stuff, but as lightweight as possible. I'm not trying to build the next Amazon here.
+
+- Sell and buy stuff. Basically the usual eCommerce things.
+- Admins can sell stuff, customers can buy stuff.
+- Superadmin can create admins, who can then manage customers, products, etc.
