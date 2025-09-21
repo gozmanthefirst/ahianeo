@@ -3,31 +3,47 @@
   "type": "module",
   "private": true,
   "exports": {
-    ".": "./src/index.ts",
-    "./schemas/*": "./src/db/schemas/*.ts",
-    "./validators/*": "./src/db/validators/*.ts"
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./schemas/*": {
+      "types": "./src/db/schemas/*.ts",
+      "default": "./dist/src/db/schemas/*.js"
+    },
+    "./validators/*": {
+      "types": "./src/db/validators/*.ts",
+      "default": "./dist/src/db/validators/*.js"
+    }
   },
   "scripts": {
-    "dev": "bun run --hot src/index.ts",
+    "dev": "tsc -w",
+    "build": "tsc && tsc-alias",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:delete": "docker compose down -v",
     "db:psql": "docker exec -it ahianeo-pg psql -U user -d ahianeo",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:reset": "drizzle-kit reset",
+    "db:studio": "drizzle-kit studio",
+    "postinstall": "drizzle-kit generate"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.5",
     "drizzle-seed": "^0.3.1",
     "drizzle-zod": "^0.8.3",
+    "dotenv": "^17.2.2",
+    "dotenv-expand": "^12.0.2",
     "pg": "^8.16.3",
     "zod": "^4.1.3"
   },
   "devDependencies": {
     "@repo/tsconfig": "workspace:*",
-    "@types/bun": "latest",
+    "@types/node": "^24.5.2",
     "@types/pg": "^8.15.5",
-    "drizzle-kit": "^0.31.4"
+    "drizzle-kit": "^0.31.4",
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.9.2"
   }
 }

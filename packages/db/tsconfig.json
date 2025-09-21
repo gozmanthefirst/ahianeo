@@ -1,4 +1,13 @@
 {
-  "extends": "@repo/tsconfig/bun.json",
-  "include": ["src/**/*.ts", "drizzle/**/*.ts"]
+  "extends": "@repo/tsconfig/base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "rootDir": "."
+  },
+  "include": ["src/**/*.ts", "drizzle/**/*.ts"],
+  "tsc-alias": {
+    "resolveFullPaths": true
+  },
+  "exclude": ["node_modules"]
 }

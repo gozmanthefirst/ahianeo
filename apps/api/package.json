@@ -2,14 +2,17 @@
   "name": "api",
   "version": "0.0.1",
   "scripts": {
-    "dev": "bun run --hot src/index.ts",
-    "build": "bun build src/index.ts --outdir ./dist --target bun --minify",
-    "start": "bun run dist/index.js",
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/src/server.js",
     "stripe": "stripe listen --forward-to localhost:8000/api/webhooks/stripe"
   },
   "dependencies": {
+    "@hono/node-server": "^1.17.1",
+    "dotenv": "^17.2.1",
+    "dotenv-expand": "^12.0.2",
+    "hono-rate-limiter": "^0.4.2",
     "@aws-sdk/client-s3": "^3.882.0",
-    "@hono/bun-compress": "^0.1.0",
     "@hono/zod-openapi": "^1.1.0",
     "@react-email/render": "^1.2.1",
     "@scalar/hono-api-reference": "^0.9.16",
@@ -23,7 +26,10 @@
   "devDependencies": {
     "@repo/db": "workspace:*",
     "@repo/tsconfig": "workspace:*",
-    "@types/bun": "latest",
+    "@types/node": "^24.1.0",
+    "tsc-alias": "^1.8.16",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   }
 }
