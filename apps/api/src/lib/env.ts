@@ -12,6 +12,7 @@ const EnvSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(1),
   BETTER_AUTH_URL: z.url(),
   RESEND_API_KEY: z.string().min(1),
+  RESEND_DOMAIN: z.url(),
   CLOUDFLARE_R2_ACCOUNT_ID: z.string().min(1),
   CLOUDFLARE_R2_ACCESS_KEY_ID: z.string().min(1),
   CLOUDFLARE_R2_SECRET_ACCESS_KEY: z.string().min(1),
