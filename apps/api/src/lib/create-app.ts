@@ -28,16 +28,11 @@ const createApp = () => {
   // CORS
   app.use("/api/*", cors({ origin: "http://localhost:3120" }));
 
-  let isInitialized = false;
-
   app.use(async (c, next) => {
     c.env = parseEnv(Object.assign(c.env || {}, process.env));
 
-    // Initialize superadmin on first request
-    if (!isInitialized) {
-      await createSuperadmin(c.env);
-      isInitialized = true;
-    }
+    superadminInit ??= createSuperadmin(c.env);
+    await superadminInit;
 
     return next();
   });
@@ -71,5 +66,8 @@ const createApp = () => {
 
   return app;
 };
+
+// Cache to avoid running createSuperadmin on every request
+let superadminInit: Promise<void> | undefined;
 
 export default createApp;
