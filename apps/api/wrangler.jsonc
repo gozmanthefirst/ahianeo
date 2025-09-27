@@ -1,13 +1,13 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "ahianeo",
+  "name": "ahianeo-api",
   "main": "src/index.ts",
   "compatibility_date": "2025-09-27",
   "compatibility_flags": ["nodejs_compat"],
   "dev": {
     "port": 8000
-  }
-  // "keep_vars": true,
+  },
+  "keep_vars": true
   // "observability": {
   //   "enabled": true,
   //   "head_sampling_rate": 1
