@@ -4,7 +4,7 @@ Ahianeo is a eCommerce website I'm building for the major purpose of showing tha
 
 ## Stack
 
-Backend is built with Hono. Admin and storefront will be Next.js and/or TanStack Start. Stripe handles checkouts and payments. Database is PostgreSQL with Drizzle as the ORM. Everything (API, admin, storefront) gets deployed with Docker.
+I use Bun and Cloudflare Wrangler for running the app locally. Backend is built with Hono. Admin and storefront are built with TanStack Start. Stripe handles checkouts and payments. Database is PostgreSQL with Drizzle as the ORM. Everything (API, admin, storefront) gets deployed to Cloudflare Workers.
 
 ## What are the features?
 
