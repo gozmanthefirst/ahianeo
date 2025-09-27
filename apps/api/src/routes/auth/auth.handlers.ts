@@ -1,8 +1,7 @@
 import { APIError } from "better-auth/api";
 import { setCookie } from "hono/cookie";
 
-import { auth } from "@/lib/auth";
-import env from "@/lib/env";
+import { betterAuthInit } from "@/lib/auth";
 import type { AppRouteHandler, ErrorStatusCodes } from "@/lib/types";
 import { getUserByEmail } from "@/queries/user-queries";
 import type {
@@ -23,8 +22,9 @@ import type {
 export const signUp: AppRouteHandler<SignUpUserRoute> = async (c) => {
   try {
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
-    const existingAccount = await getUserByEmail(data.email);
+    const existingAccount = await getUserByEmail(data.email, c.env);
 
     if (existingAccount) {
       return c.json(
@@ -59,6 +59,7 @@ export const signUp: AppRouteHandler<SignUpUserRoute> = async (c) => {
 export const verifyEmail: AppRouteHandler<VerifyEmailRoute> = async (c) => {
   try {
     const data = c.req.valid("query");
+    const auth = betterAuthInit(c.env);
 
     await auth.api.verifyEmail({
       query: data,
@@ -86,6 +87,7 @@ export const verifyEmail: AppRouteHandler<VerifyEmailRoute> = async (c) => {
 export const signIn: AppRouteHandler<SignInRoute> = async (c) => {
   try {
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
     const { response, headers } = await auth.api.signInEmail({
       body: data,
@@ -96,9 +98,9 @@ export const signIn: AppRouteHandler<SignInRoute> = async (c) => {
     // For setting the auth token in cookies and sending it in the response
     const authToken = headers.get("set-auth-token") || "";
     c.res.headers.append("Set-Auth-Token", authToken);
-    setCookie(c, env.AUTH_COOKIE, authToken, {
+    setCookie(c, c.env.AUTH_COOKIE, authToken, {
       path: "/",
-      secure: env.NODE_ENV === "production",
+      secure: c.env.NODE_ENV === "production",
       httpOnly: true,
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7,
@@ -128,8 +130,9 @@ export const sendVerificationEmail: AppRouteHandler<
 > = async (c) => {
   try {
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
-    const existingAccount = await getUserByEmail(data.email);
+    const existingAccount = await getUserByEmail(data.email, c.env);
 
     if (!existingAccount) {
       return c.json(
@@ -173,6 +176,7 @@ export const reqPwdResetEmail: AppRouteHandler<ReqPwdResetEmailRoute> = async (
 ) => {
   try {
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
     const response = await auth.api.requestPasswordReset({
       body: data,
@@ -200,6 +204,7 @@ export const reqPwdResetEmail: AppRouteHandler<ReqPwdResetEmailRoute> = async (
 export const resetPwd: AppRouteHandler<ResetPwdRoute> = async (c) => {
   try {
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
     const response = await auth.api.resetPassword({
       body: data,
@@ -227,6 +232,7 @@ export const resetPwd: AppRouteHandler<ResetPwdRoute> = async (c) => {
 export const changePwd: AppRouteHandler<ChangePwdRoute> = async (c) => {
   try {
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
     const response = await auth.api.changePassword({
       body: { ...data, revokeOtherSessions: true },
@@ -254,6 +260,8 @@ export const changePwd: AppRouteHandler<ChangePwdRoute> = async (c) => {
 
 export const signOut: AppRouteHandler<SignOutRoute> = async (c) => {
   try {
+    const auth = betterAuthInit(c.env);
+
     const response = await auth.api.signOut({
       headers: c.req.raw.headers,
     });

@@ -6,18 +6,26 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 
-import env from "./env";
+import type { Environment } from "./env";
 
-const r2Client = new S3Client({
-  region: "auto",
-  endpoint: `https://${env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: env.CLOUDFLARE_R2_ACCESS_KEY_ID,
-    secretAccessKey: env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
-  },
-});
+const createR2Client = (env: Environment) => {
+  return new S3Client({
+    region: "auto",
+    endpoint: `https://${env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+      secretAccessKey: env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+    },
+  });
+};
 
-export const uploadImageToR2 = async (file: File, folder = "products") => {
+export const uploadImageToR2 = async (
+  file: File,
+  env: Environment,
+  folder = "products",
+) => {
+  const r2Client = createR2Client(env);
+
   const fileExtension = file.name.split(".").pop();
   const fileName = `${folder}/${randomUUID()}.${fileExtension}`;
 
@@ -36,7 +44,9 @@ export const uploadImageToR2 = async (file: File, folder = "products") => {
   };
 };
 
-export const deleteImageFromR2 = async (key: string) => {
+export const deleteImageFromR2 = async (key: string, env: Environment) => {
+  const r2Client = createR2Client(env);
+
   const command = new DeleteObjectCommand({
     Bucket: env.CLOUDFLARE_R2_BUCKET_NAME,
     Key: key,
@@ -45,4 +55,4 @@ export const deleteImageFromR2 = async (key: string) => {
   await r2Client.send(command);
 };
 
-export { r2Client };
+export { createR2Client };

@@ -1,6 +1,10 @@
-import db from "@repo/db";
+import { createDb } from "@repo/db";
 
-export const getProducts = async () => {
+import type { Environment } from "@/lib/env";
+
+export const getProducts = async (env: Environment) => {
+  const db = createDb(env.DATABASE_URL);
+
   const result = await db.query.product.findMany({
     with: {
       creator: true,
@@ -34,7 +38,9 @@ export const getProducts = async () => {
   return products;
 };
 
-export const getProductById = async (id: string) => {
+export const getProductById = async (id: string, env: Environment) => {
+  const db = createDb(env.DATABASE_URL);
+
   const result = await db.query.product.findFirst({
     where: (product, { eq }) => eq(product.id, id),
     with: {

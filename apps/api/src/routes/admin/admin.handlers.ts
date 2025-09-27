@@ -1,6 +1,6 @@
 import { APIError } from "better-auth/api";
 
-import { auth } from "@/lib/auth";
+import { betterAuthInit } from "@/lib/auth";
 import type { AppRouteHandler, ErrorStatusCodes } from "@/lib/types";
 import { getAdminOrderById, getAllOrders } from "@/queries/order-queries";
 import { getSessionByToken, getUserById } from "@/queries/user-queries";
@@ -19,7 +19,7 @@ import type { BanUserRoute, UnbanUserRoute } from "./admin.routes";
 
 export const getAdminOrders: AppRouteHandler<GetAllOrdersRoute> = async (c) => {
   try {
-    const orders = await getAllOrders();
+    const orders = await getAllOrders(c.env);
 
     return c.json(
       successResponse(orders, "All orders retrieved successfully"),
@@ -40,7 +40,7 @@ export const getAdminOrderDetails: AppRouteHandler<GetAdminOrderRoute> = async (
   const { id } = c.req.valid("param");
 
   try {
-    const orderWithItems = await getAdminOrderById(id);
+    const orderWithItems = await getAdminOrderById(id, c.env);
 
     if (!orderWithItems) {
       return c.json(
@@ -67,6 +67,8 @@ export const getAdminOrderDetails: AppRouteHandler<GetAdminOrderRoute> = async (
 
 export const listUsers: AppRouteHandler<ListUsersRoute> = async (c) => {
   try {
+    const auth = betterAuthInit(c.env);
+
     const result = await auth.api.listUsers({
       query: { limit: 999999, offset: 0 },
       headers: c.req.raw.headers,
@@ -97,8 +99,9 @@ export const listUserSessions: AppRouteHandler<ListUserSessionsRoute> = async (
   try {
     const user = c.get("user");
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
-    const userToGetSessions = await getUserById(data.userId);
+    const userToGetSessions = await getUserById(data.userId, c.env);
 
     if (!userToGetSessions) {
       return c.json(
@@ -144,8 +147,12 @@ export const revokeUserSession: AppRouteHandler<
   try {
     const user = c.get("user");
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
-    const sessionToBeRevoked = await getSessionByToken(data.sessionToken);
+    const sessionToBeRevoked = await getSessionByToken(
+      data.sessionToken,
+      c.env,
+    );
 
     if (!sessionToBeRevoked) {
       return c.json(
@@ -154,7 +161,10 @@ export const revokeUserSession: AppRouteHandler<
       );
     }
 
-    const userToRevokeSession = await getUserById(sessionToBeRevoked.userId);
+    const userToRevokeSession = await getUserById(
+      sessionToBeRevoked.userId,
+      c.env,
+    );
 
     if (!userToRevokeSession) {
       return c.json(
@@ -214,8 +224,9 @@ export const revokeUserSessions: AppRouteHandler<
   try {
     const user = c.get("user");
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
-    const userToRevokeSessions = await getUserById(data.userId);
+    const userToRevokeSessions = await getUserById(data.userId, c.env);
 
     if (!userToRevokeSessions) {
       return c.json(
@@ -276,8 +287,9 @@ export const changeUserPwd: AppRouteHandler<ChangeUserPwdRoute> = async (c) => {
   try {
     const user = c.get("user");
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
-    const userToChangePwd = await getUserById(data.userId);
+    const userToChangePwd = await getUserById(data.userId, c.env);
 
     if (!userToChangePwd) {
       return c.json(
@@ -332,6 +344,7 @@ export const banUser: AppRouteHandler<BanUserRoute> = async (c) => {
   try {
     const user = c.get("user");
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
     if (user.id === data.userId) {
       return c.json(
@@ -340,7 +353,7 @@ export const banUser: AppRouteHandler<BanUserRoute> = async (c) => {
       );
     }
 
-    const userToBeBanned = await getUserById(data.userId);
+    const userToBeBanned = await getUserById(data.userId, c.env);
 
     if (!userToBeBanned) {
       return c.json(
@@ -391,6 +404,7 @@ export const unbanUser: AppRouteHandler<UnbanUserRoute> = async (c) => {
   try {
     const user = c.get("user");
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
     if (user.id === data.userId) {
       return c.json(
@@ -399,7 +413,7 @@ export const unbanUser: AppRouteHandler<UnbanUserRoute> = async (c) => {
       );
     }
 
-    const userToBeUnbanned = await getUserById(data.userId);
+    const userToBeUnbanned = await getUserById(data.userId, c.env);
 
     if (!userToBeUnbanned) {
       return c.json(

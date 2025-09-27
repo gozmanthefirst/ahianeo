@@ -1,6 +1,6 @@
 import { APIError } from "better-auth/api";
 
-import { auth } from "@/lib/auth";
+import { betterAuthInit } from "@/lib/auth";
 import type { AppRouteHandler, ErrorStatusCodes } from "@/lib/types";
 import type { UpdateUserRoute } from "@/routes/user/user.routes";
 import { errorResponse, successResponse } from "@/utils/api-response";
@@ -33,6 +33,7 @@ export const getUser: AppRouteHandler<GetUserRoute> = async (c) => {
 export const updateUser: AppRouteHandler<UpdateUserRoute> = async (c) => {
   try {
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
     const response = await auth.api.updateUser({
       body: data,

@@ -1,11 +1,15 @@
-import db, { desc, eq, sql } from "@repo/db";
+import { createDb, desc, eq, sql } from "@repo/db";
 import { order, orderItem } from "@repo/db/schemas/order-schema";
 import { product } from "@repo/db/schemas/product-schema";
+
+import type { Environment } from "@/lib/env";
 
 /**
  * Get all orders with customer information (admin only)
  */
-export const getAllOrders = async () => {
+export const getAllOrders = async (env: Environment) => {
+  const db = createDb(env.DATABASE_URL);
+
   const allOrders = await db.query.order.findMany({
     with: {
       orderItems: {
@@ -24,7 +28,9 @@ export const getAllOrders = async () => {
 /**
  * Get order by ID with customer information (admin only)
  */
-export const getAdminOrderById = async (orderId: string) => {
+export const getAdminOrderById = async (orderId: string, env: Environment) => {
+  const db = createDb(env.DATABASE_URL);
+
   const orderWithItems = await db.query.order.findFirst({
     where: (order, { eq }) => eq(order.id, orderId),
     with: {
@@ -43,7 +49,9 @@ export const getAdminOrderById = async (orderId: string) => {
 /**
  * Get user's orders with order items and products
  */
-export const getUserOrders = async (userId: string) => {
+export const getUserOrders = async (userId: string, env: Environment) => {
+  const db = createDb(env.DATABASE_URL);
+
   const userOrders = await db.query.order.findMany({
     where: (order, { eq }) => eq(order.userId, userId),
     with: {
@@ -75,8 +83,10 @@ export const createOrder = async (
   userId: string,
   email: string,
   totalAmount: string,
+  env: Environment,
   stripeSessionId?: string | null,
 ) => {
+  const db = createDb(env.DATABASE_URL);
   const orderNumber = generateOrderNumber();
 
   const [newOrder] = await db
@@ -105,7 +115,10 @@ export const createOrderItems = async (
     quantity: number;
     unitPrice: string;
   }>,
+  env: Environment,
 ) => {
+  const db = createDb(env.DATABASE_URL);
+
   const orderItemsData = cartItems.map((item) => {
     const subTotal = (parseFloat(item.unitPrice) * item.quantity).toFixed(2);
     return {
@@ -128,7 +141,9 @@ export const createOrderItems = async (
 /**
  * Get order by ID with all relations (no customer)
  */
-export const getOrderById = async (orderId: string) => {
+export const getOrderById = async (orderId: string, env: Environment) => {
+  const db = createDb(env.DATABASE_URL);
+
   const orderWithItems = await db.query.order.findFirst({
     where: (order, { eq }) => eq(order.id, orderId),
     with: {
@@ -146,7 +161,12 @@ export const getOrderById = async (orderId: string) => {
 /**
  * Get order by Stripe Checkout Session ID
  */
-export const getOrderByStripeSessionId = async (sessionId: string) => {
+export const getOrderByStripeSessionId = async (
+  sessionId: string,
+  env: Environment,
+) => {
+  const db = createDb(env.DATABASE_URL);
+
   const orderWithItems = await db.query.order.findFirst({
     where: (order, { eq }) => eq(order.stripeCheckoutSessionId, sessionId),
     with: {
@@ -168,9 +188,12 @@ export const getOrderByStripeSessionId = async (sessionId: string) => {
 export const updateOrderStatus = async (
   orderId: string,
   status: string,
+  env: Environment,
   paymentStatus?: string,
   paymentMethod?: string,
 ) => {
+  const db = createDb(env.DATABASE_URL);
+
   const updateData: Record<string, string> = { status };
 
   if (paymentStatus) {
@@ -193,7 +216,9 @@ export const updateOrderStatus = async (
 /**
  * Get user's cart by user ID
  */
-export const getUserCartId = async (userId: string) => {
+export const getUserCartId = async (userId: string, env: Environment) => {
+  const db = createDb(env.DATABASE_URL);
+
   const userCart = await db.query.cart.findFirst({
     where: (cart, { eq }) => eq(cart.userId, userId),
   });
@@ -209,7 +234,10 @@ export const reserveStock = async (
     productId: string;
     quantity: number;
   }>,
+  env: Environment,
 ) => {
+  const db = createDb(env.DATABASE_URL);
+
   for (const item of cartItems) {
     await db
       .update(product)
@@ -228,7 +256,10 @@ export const restoreStock = async (
     productId: string;
     quantity: number;
   }>,
+  env: Environment,
 ) => {
+  const db = createDb(env.DATABASE_URL);
+
   for (const item of orderItems) {
     await db
       .update(product)

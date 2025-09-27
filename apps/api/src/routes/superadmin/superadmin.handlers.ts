@@ -1,6 +1,6 @@
 import { APIError } from "better-auth/api";
 
-import { auth } from "@/lib/auth";
+import { betterAuthInit } from "@/lib/auth";
 import type { AppRouteHandler, ErrorStatusCodes } from "@/lib/types";
 import { createUser as createUserByAdmin } from "@/queries/admin-queries";
 import { getUserByEmail, getUserById } from "@/queries/user-queries";
@@ -16,7 +16,7 @@ export const createUser: AppRouteHandler<CreateUserRoute> = async (c) => {
   try {
     const data = c.req.valid("json");
 
-    const existingUser = await getUserByEmail(data.email);
+    const existingUser = await getUserByEmail(data.email, c.env);
 
     if (existingUser) {
       return c.json(
@@ -25,7 +25,7 @@ export const createUser: AppRouteHandler<CreateUserRoute> = async (c) => {
       );
     }
 
-    const newUser = await createUserByAdmin(data);
+    const newUser = await createUserByAdmin(data, c.env);
 
     return c.json(
       successResponse({ user: newUser }, "User created successfully"),
@@ -52,6 +52,7 @@ export const changeUserRole: AppRouteHandler<ChangeUserRoleRoute> = async (
   try {
     const user = c.get("user");
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
     if (user.id === data.userId) {
       return c.json(
@@ -60,7 +61,7 @@ export const changeUserRole: AppRouteHandler<ChangeUserRoleRoute> = async (
       );
     }
 
-    const userToBeChanged = await getUserById(data.userId);
+    const userToBeChanged = await getUserById(data.userId, c.env);
 
     if (!userToBeChanged) {
       return c.json(
@@ -107,6 +108,7 @@ export const deleteUser: AppRouteHandler<DeleteUserRoute> = async (c) => {
   try {
     const user = c.get("user");
     const data = c.req.valid("json");
+    const auth = betterAuthInit(c.env);
 
     if (user.id === data.userId) {
       return c.json(
@@ -115,7 +117,7 @@ export const deleteUser: AppRouteHandler<DeleteUserRoute> = async (c) => {
       );
     }
 
-    const userToBeDeleted = await getUserById(data.userId);
+    const userToBeDeleted = await getUserById(data.userId, c.env);
 
     if (!userToBeDeleted) {
       return c.json(

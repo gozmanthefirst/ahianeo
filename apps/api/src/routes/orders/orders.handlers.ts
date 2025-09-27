@@ -1,8 +1,7 @@
-import db, { eq } from "@repo/db";
+import { createDb, eq } from "@repo/db";
 import { order } from "@repo/db/schemas/order-schema";
 
-import env from "@/lib/env";
-import { stripe } from "@/lib/stripe";
+import { stripeInit } from "@/lib/stripe";
 import type { AppRouteHandler } from "@/lib/types";
 import { getUserCartWithItems } from "@/queries/cart-queries";
 import {
@@ -26,7 +25,7 @@ export const getUserOrderHistory: AppRouteHandler<GetUserOrdersRoute> = async (
   const user = c.get("user");
 
   try {
-    const orders = await getUserOrders(user.id);
+    const orders = await getUserOrders(user.id, c.env);
 
     return c.json(
       successResponse(orders, "User orders retrieved successfully"),
@@ -48,7 +47,7 @@ export const getUserOrderDetails: AppRouteHandler<GetUserOrderRoute> = async (
   const { id } = c.req.valid("param");
 
   try {
-    const orderWithItems = await getOrderById(id);
+    const orderWithItems = await getOrderById(id, c.env);
 
     if (!orderWithItems || orderWithItems.userId !== user.id) {
       return c.json(
@@ -77,10 +76,12 @@ export const createCheckout: AppRouteHandler<CreateCheckoutRoute> = async (
   c,
 ) => {
   const user = c.get("user");
+  const db = createDb(c.env.DATABASE_URL);
+  const stripe = stripeInit(c.env);
 
   try {
     // Get user's cart with items
-    const userCart = await getUserCartWithItems(user.id);
+    const userCart = await getUserCartWithItems(user.id, c.env);
 
     if (!userCart || userCart.cartItems.length === 0) {
       return c.json(
@@ -139,6 +140,7 @@ export const createCheckout: AppRouteHandler<CreateCheckoutRoute> = async (
         user.id,
         user.email,
         totalAmount.toFixed(2),
+        c.env,
       );
 
       // Create order items with frozen prices
@@ -149,7 +151,7 @@ export const createCheckout: AppRouteHandler<CreateCheckoutRoute> = async (
       }));
 
       // This will create the order items from the cart items with frozen prices.
-      await createOrderItems(newOrder.id, orderItemsData);
+      await createOrderItems(newOrder.id, orderItemsData, c.env);
 
       // Reserve stock immediately
       const stockReservationData = userCart.cartItems.map((cartItem) => ({
@@ -158,7 +160,7 @@ export const createCheckout: AppRouteHandler<CreateCheckoutRoute> = async (
       }));
 
       // This will reserve stock for the order items.
-      await reserveStock(stockReservationData);
+      await reserveStock(stockReservationData, c.env);
 
       // This will create the Stripe Checkout session.
       // Create Stripe Checkout Session
@@ -180,8 +182,8 @@ export const createCheckout: AppRouteHandler<CreateCheckoutRoute> = async (
         })),
         mode: "payment",
         // Will still configure the URLs once we have frontend up and running.
-        success_url: `${env.FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${env.FRONTEND_URL}/checkout/cancel`,
+        success_url: `${c.env.FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${c.env.FRONTEND_URL}/checkout/cancel`,
         customer_email: user.email,
         client_reference_id: newOrder.id,
         metadata: {
@@ -213,7 +215,7 @@ export const createCheckout: AppRouteHandler<CreateCheckoutRoute> = async (
     });
 
     // Fetch complete order with relations
-    const orderWithItems = await getOrderById(result.order.id);
+    const orderWithItems = await getOrderById(result.order.id, c.env);
 
     if (!orderWithItems) {
       return c.json(
@@ -229,7 +231,7 @@ export const createCheckout: AppRouteHandler<CreateCheckoutRoute> = async (
       order: orderWithItems,
       checkoutUrl: result.checkoutSession.url,
       checkoutSessionId: result.checkoutSession.id,
-      stripePublishableKey: env.STRIPE_PUBLISHABLE_KEY,
+      stripePublishableKey: c.env.STRIPE_PUBLISHABLE_KEY,
     };
 
     return c.json(

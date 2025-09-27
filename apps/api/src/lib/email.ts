@@ -1,22 +1,27 @@
 import { Resend } from "resend";
 
-import env from "./env";
+import type { Environment } from "./env";
 
-const resend = new Resend(env.RESEND_API_KEY);
+const resendInit = (env: Environment) => {
+  return new Resend(env.RESEND_API_KEY);
+};
 
 type SendEmail = {
   to: string;
   token: string;
+  env: Environment;
   name?: string;
   url?: string;
 };
 
 export const sendVerificationEmail = async ({
   to,
-  name,
   token,
+  env,
+  name,
   url,
 }: SendEmail) => {
+  const resend = resendInit(env);
   const verificationUrl =
     url ?? `${env.FRONTEND_URL}/auth/verify-email?token=${token}`;
 
@@ -35,10 +40,12 @@ export const sendVerificationEmail = async ({
 
 export const sendResetPasswordEmail = async ({
   to,
-  name,
   token,
+  env,
+  name,
   url,
 }: SendEmail) => {
+  const resend = resendInit(env);
   const resetPasswordUrl =
     url ?? `${env.FRONTEND_URL}/auth/reset-password?token=${token}`;
 
@@ -57,8 +64,9 @@ export const sendResetPasswordEmail = async ({
 
 export const sendAccountCreatedEmail = async ({
   to,
-  name,
   role,
+  env,
+  name,
   email,
   password,
 }: Omit<SendEmail, "url" | "token"> & {
@@ -66,6 +74,7 @@ export const sendAccountCreatedEmail = async ({
   email: string;
   password: string;
 }) => {
+  const resend = resendInit(env);
   await resend.emails.send({
     from: `Ahianeo <ahianeo@${env.RESEND_DOMAIN}>`,
     to,

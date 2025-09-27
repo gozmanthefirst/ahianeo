@@ -1,8 +1,8 @@
-import db from "@repo/db";
+import { createDb } from "@repo/db";
 import type Stripe from "stripe";
 
-import env from "@/lib/env";
-import { stripe } from "@/lib/stripe";
+import type { Environment } from "@/lib/env";
+import { stripeInit } from "@/lib/stripe";
 import type { AppRouteHandler } from "@/lib/types";
 import { clearCartItemsByUserId } from "@/queries/cart-queries";
 import {
@@ -10,7 +10,7 @@ import {
   restoreStock,
   updateOrderStatus,
 } from "@/queries/order-queries";
-import type { StripeWebhookRoute } from "@/routes/webhooks/stripe.routes";
+import type { StripeWebhookRoute } from "@/routes/stripe/stripe.routes";
 import { errorResponse, successResponse } from "@/utils/api-response";
 import HttpStatusCodes from "@/utils/http-status-codes";
 
@@ -19,6 +19,7 @@ export const handleStripeWebhook: AppRouteHandler<StripeWebhookRoute> = async (
 ) => {
   const signature = c.req.header("stripe-signature");
   const body = await c.req.text();
+  const stripe = stripeInit(c.env);
 
   if (!signature) {
     return c.json(
@@ -35,7 +36,7 @@ export const handleStripeWebhook: AppRouteHandler<StripeWebhookRoute> = async (
     const event = await stripe.webhooks.constructEventAsync(
       body,
       signature,
-      env.STRIPE_WEBHOOK_SECRET,
+      c.env.STRIPE_WEBHOOK_SECRET,
     );
 
     console.log(`Received Stripe webhook: ${event.type}`);
@@ -46,18 +47,21 @@ export const handleStripeWebhook: AppRouteHandler<StripeWebhookRoute> = async (
       case "checkout.session.completed":
         await handleCheckoutSuccess(
           event.data.object as Stripe.Checkout.Session,
+          c.env,
         );
         break;
 
       case "checkout.session.expired":
         await handleCheckoutExpired(
           event.data.object as Stripe.Checkout.Session,
+          c.env,
         );
         break;
 
       case "checkout.session.async_payment_failed":
         await handleCheckoutCancelled(
           event.data.object as Stripe.Checkout.Session,
+          c.env,
         );
         break;
 
@@ -81,12 +85,17 @@ export const handleStripeWebhook: AppRouteHandler<StripeWebhookRoute> = async (
 /**
  * Handle successful checkout session
  */
-const handleCheckoutSuccess = async (session: Stripe.Checkout.Session) => {
+const handleCheckoutSuccess = async (
+  session: Stripe.Checkout.Session,
+  env: Environment,
+) => {
   console.log(`Processing checkout success for session: ${session.id}`);
 
   try {
+    const db = createDb(env.DATABASE_URL);
+
     await db.transaction(async () => {
-      const order = await getOrderByStripeSessionId(session.id);
+      const order = await getOrderByStripeSessionId(session.id, env);
 
       if (!order) {
         console.error(`Order not found for checkout session: ${session.id}`);
@@ -97,13 +106,14 @@ const handleCheckoutSuccess = async (session: Stripe.Checkout.Session) => {
       await updateOrderStatus(
         order.id,
         "completed",
+        env,
         "paid",
         session.payment_method_types?.[0] || "card",
       );
 
       // Clear user's cart
       if (order.userId) {
-        await clearCartItemsByUserId(order.userId);
+        await clearCartItemsByUserId(order.userId, env);
         console.log(`Cart cleared for user: ${order.userId}`);
       }
 
@@ -118,12 +128,17 @@ const handleCheckoutSuccess = async (session: Stripe.Checkout.Session) => {
 /**
  * Handle expired checkout session
  */
-const handleCheckoutExpired = async (session: Stripe.Checkout.Session) => {
+const handleCheckoutExpired = async (
+  session: Stripe.Checkout.Session,
+  env: Environment,
+) => {
   console.log(`Processing checkout expiration for session: ${session.id}`);
 
   try {
+    const db = createDb(env.DATABASE_URL);
+
     await db.transaction(async () => {
-      const order = await getOrderByStripeSessionId(session.id);
+      const order = await getOrderByStripeSessionId(session.id, env);
 
       if (!order) {
         console.error(`Order not found for checkout session: ${session.id}`);
@@ -131,7 +146,7 @@ const handleCheckoutExpired = async (session: Stripe.Checkout.Session) => {
       }
 
       // Update order status to cancelled and payment status to failed
-      await updateOrderStatus(order.id, "cancelled", "failed");
+      await updateOrderStatus(order.id, "cancelled", env, "failed");
 
       // RESTORE RESERVED STOCK
       const stockToRestore = order.orderItems.map((item) => ({
@@ -139,7 +154,7 @@ const handleCheckoutExpired = async (session: Stripe.Checkout.Session) => {
         quantity: item.quantity,
       }));
 
-      await restoreStock(stockToRestore);
+      await restoreStock(stockToRestore, env);
 
       console.log(`Stock restored for expired session ${order.orderNumber}`);
     });
@@ -152,12 +167,17 @@ const handleCheckoutExpired = async (session: Stripe.Checkout.Session) => {
 /**
  * Handle cancelled checkout session (payment failure)
  */
-const handleCheckoutCancelled = async (session: Stripe.Checkout.Session) => {
+const handleCheckoutCancelled = async (
+  session: Stripe.Checkout.Session,
+  env: Environment,
+) => {
   console.log(`Processing checkout cancellation for session: ${session.id}`);
 
   try {
+    const db = createDb(env.DATABASE_URL);
+
     await db.transaction(async () => {
-      const order = await getOrderByStripeSessionId(session.id);
+      const order = await getOrderByStripeSessionId(session.id, env);
 
       if (!order) {
         console.error(`Order not found for checkout session: ${session.id}`);
@@ -165,7 +185,7 @@ const handleCheckoutCancelled = async (session: Stripe.Checkout.Session) => {
       }
 
       // Update order status to cancelled and payment status to failed
-      await updateOrderStatus(order.id, "cancelled", "failed");
+      await updateOrderStatus(order.id, "cancelled", env, "failed");
 
       // RESTORE RESERVED STOCK
       const stockToRestore = order.orderItems.map((item) => ({
@@ -173,7 +193,7 @@ const handleCheckoutCancelled = async (session: Stripe.Checkout.Session) => {
         quantity: item.quantity,
       }));
 
-      await restoreStock(stockToRestore);
+      await restoreStock(stockToRestore, env);
 
       console.log(`Stock restored for cancelled session ${order.orderNumber}`);
     });

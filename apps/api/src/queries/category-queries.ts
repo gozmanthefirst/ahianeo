@@ -1,6 +1,10 @@
-import db from "@repo/db";
+import { createDb } from "@repo/db";
 
-export const getCategoryById = async (id: string) => {
+import type { Environment } from "@/lib/env";
+
+export const getCategoryById = async (id: string, env: Environment) => {
+  const db = createDb(env.DATABASE_URL);
+
   const result = await db.query.category.findFirst({
     where: (category, { eq }) => eq(category.id, id),
     with: {

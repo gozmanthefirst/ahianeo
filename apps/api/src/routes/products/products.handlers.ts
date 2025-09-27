@@ -1,4 +1,4 @@
-import db, { eq } from "@repo/db";
+import { createDb, eq } from "@repo/db";
 import { product, productCategory } from "@repo/db/schemas/product-schema";
 import slugify from "slugify";
 import { z } from "zod";
@@ -23,7 +23,7 @@ import { getErrDetailsFromErrFields } from "@/utils/openapi-helpers";
 export const getAllProducts: AppRouteHandler<GetAllproductsRoute> = async (
   c,
 ) => {
-  const products = await getProducts();
+  const products = await getProducts(c.env);
 
   return c.json(
     successResponse(products, "All products retrieved successfully"),
@@ -34,7 +34,7 @@ export const getAllProducts: AppRouteHandler<GetAllproductsRoute> = async (
 export const getProduct: AppRouteHandler<GetProductRoute> = async (c) => {
   const { id } = c.req.valid("param");
 
-  const productExtended = await getProductById(id);
+  const productExtended = await getProductById(id, c.env);
 
   if (!productExtended) {
     return c.json(
@@ -51,6 +51,7 @@ export const getProduct: AppRouteHandler<GetProductRoute> = async (c) => {
 
 export const createProduct: AppRouteHandler<CreateProductRoute> = async (c) => {
   const rawFormData = c.req.valid("form");
+  const db = createDb(c.env.DATABASE_URL);
 
   // Validate and transform form data
   const validationErrors: Record<string, string> = {};
@@ -196,7 +197,7 @@ export const createProduct: AppRouteHandler<CreateProductRoute> = async (c) => {
 
   // Upload images to R2
   const uploadPromises = rawFormData.images.map((image) =>
-    uploadImageToR2(image, "products"),
+    uploadImageToR2(image, c.env, "products"),
   );
   const uploadedImages = await Promise.all(uploadPromises);
 
@@ -232,7 +233,7 @@ export const createProduct: AppRouteHandler<CreateProductRoute> = async (c) => {
     });
 
     // Fetch the complete product with relations
-    const productWithRelations = await getProductById(result.id);
+    const productWithRelations = await getProductById(result.id, c.env);
 
     return c.json(
       successResponse(productWithRelations, "Product created successfully"),
@@ -241,7 +242,7 @@ export const createProduct: AppRouteHandler<CreateProductRoute> = async (c) => {
   } catch (error) {
     // If database transaction fails, clean up uploaded images
     const deletePromises = uploadedImages.map((img) =>
-      deleteImageFromR2(img.key).catch(console.error),
+      deleteImageFromR2(img.key, c.env).catch(console.error),
     );
     await Promise.allSettled(deletePromises);
 
@@ -256,9 +257,10 @@ export const createProduct: AppRouteHandler<CreateProductRoute> = async (c) => {
 export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
   const { id } = c.req.valid("param");
   const rawFormData = c.req.valid("form");
+  const db = createDb(c.env.DATABASE_URL);
 
   // Get existing product first
-  const existingProduct = await getProductById(id);
+  const existingProduct = await getProductById(id, c.env);
   if (!existingProduct) {
     return c.json(
       errorResponse("NOT_FOUND", "Product not found"),
@@ -477,7 +479,7 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
   let uploadedImages: { url: string; key: string }[] = [];
   if (newImages.length > 0) {
     const uploadPromises = newImages.map((image) =>
-      uploadImageToR2(image, "products"),
+      uploadImageToR2(image, c.env, "products"),
     );
     uploadedImages = await Promise.all(uploadPromises);
   }
@@ -541,14 +543,14 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
 
       if (imagesToDelete.length > 0) {
         const deletePromises = imagesToDelete.map((key) =>
-          deleteImageFromR2(key).catch(console.error),
+          deleteImageFromR2(key, c.env).catch(console.error),
         );
         await Promise.allSettled(deletePromises);
       }
     }
 
     // Fetch the complete updated product with relations
-    const productWithRelations = await getProductById(result.id);
+    const productWithRelations = await getProductById(result.id, c.env);
 
     return c.json(
       successResponse(productWithRelations, "Product updated successfully"),
@@ -558,7 +560,7 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
     // If database transaction fails, clean up newly uploaded images
     if (uploadedImages.length > 0) {
       const deletePromises = uploadedImages.map((img) =>
-        deleteImageFromR2(img.key).catch(console.error),
+        deleteImageFromR2(img.key, c.env).catch(console.error),
       );
       await Promise.allSettled(deletePromises);
     }
@@ -573,9 +575,10 @@ export const updateProduct: AppRouteHandler<UpdateProductRoute> = async (c) => {
 
 export const deleteProduct: AppRouteHandler<DeleteProductRoute> = async (c) => {
   const { id } = c.req.valid("param");
+  const db = createDb(c.env.DATABASE_URL);
 
   // Get existing product first
-  const existingProduct = await getProductById(id);
+  const existingProduct = await getProductById(id, c.env);
   if (!existingProduct) {
     return c.json(
       errorResponse("NOT_FOUND", "Product not found"),
@@ -631,7 +634,7 @@ export const deleteProduct: AppRouteHandler<DeleteProductRoute> = async (c) => {
     // After successful deletion, clean up images from R2
     if (existingProduct.images.length > 0) {
       const deletePromises = existingProduct.images.map((img) =>
-        deleteImageFromR2(img.key).catch((error) => {
+        deleteImageFromR2(img.key, c.env).catch((error) => {
           console.error(`Failed to delete image ${img.key} from R2:`, error);
           // Don't throw error - product is already deleted
         }),

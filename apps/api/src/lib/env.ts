@@ -1,4 +1,4 @@
-import z, { type ZodError } from "zod";
+import z from "zod";
 
 const EnvSchema = z.object({
   NODE_ENV: z
@@ -12,7 +12,7 @@ const EnvSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(1),
   BETTER_AUTH_URL: z.url(),
   RESEND_API_KEY: z.string().min(1),
-  RESEND_DOMAIN: z.url(),
+  RESEND_DOMAIN: z.string(),
   CLOUDFLARE_R2_ACCOUNT_ID: z.string().min(1),
   CLOUDFLARE_R2_ACCESS_KEY_ID: z.string().min(1),
   CLOUDFLARE_R2_SECRET_ACCESS_KEY: z.string().min(1),
@@ -23,16 +23,15 @@ const EnvSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
 });
 
-export type Env = z.infer<typeof EnvSchema>;
+export type Environment = z.infer<typeof EnvSchema>;
 
-let env: Env;
+// biome-ignore lint/suspicious/noExplicitAny: Required for dynamic parsing
+export const parseEnv = (data: any): Environment => {
+  const { data: env, error } = EnvSchema.safeParse(data);
 
-try {
-  env = EnvSchema.parse(process.env);
-} catch (e) {
-  const error = e as ZodError;
-  console.error(z.prettifyError(error));
-  process.exit(1);
-}
+  if (error) {
+    throw new Error(z.prettifyError(error));
+  }
 
-export default env;
+  return env;
+};

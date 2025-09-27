@@ -1,4 +1,4 @@
-import db from "@repo/db";
+import { createDb } from "@repo/db";
 
 import type { AppRouteHandler } from "@/lib/types";
 import {
@@ -26,7 +26,7 @@ export const getUserCart: AppRouteHandler<GetUserCartRoute> = async (c) => {
   const user = c.get("user");
 
   try {
-    const userCart = await getOrCreateUserCart(user.id);
+    const userCart = await getOrCreateUserCart(user.id, c.env);
 
     if (!userCart) {
       return c.json(
@@ -85,8 +85,10 @@ export const addToCart: AppRouteHandler<AddToCartRoute> = async (c) => {
   const { productId, quantity } = c.req.valid("json");
 
   try {
+    const db = createDb(c.env.DATABASE_URL);
+
     // Validate product exists and get current stock
-    const product = await getProductById(productId);
+    const product = await getProductById(productId, c.env);
 
     if (!product) {
       return c.json(
@@ -96,7 +98,7 @@ export const addToCart: AppRouteHandler<AddToCartRoute> = async (c) => {
     }
 
     // Get or create user cart
-    const userCart = await getOrCreateUserCart(user.id);
+    const userCart = await getOrCreateUserCart(user.id, c.env);
     if (!userCart) {
       return c.json(
         errorResponse("INTERNAL_SERVER_ERROR", "Failed to retrieve cart"),
@@ -105,7 +107,7 @@ export const addToCart: AppRouteHandler<AddToCartRoute> = async (c) => {
     }
 
     // Check if product already in cart
-    const existingCartItem = await getCartItem(userCart.id, productId);
+    const existingCartItem = await getCartItem(userCart.id, productId, c.env);
 
     let totalRequestedQuantity = quantity;
     if (existingCartItem) {
@@ -139,13 +141,14 @@ export const addToCart: AppRouteHandler<AddToCartRoute> = async (c) => {
         await updateCartItemQuantity(
           existingCartItem.id,
           totalRequestedQuantity,
+          c.env,
         );
       } else {
-        await addCartItem(userCart.id, productId, quantity);
+        await addCartItem(userCart.id, productId, quantity, c.env);
       }
     });
 
-    const updatedCart = await getUserCartWithItems(user.id);
+    const updatedCart = await getUserCartWithItems(user.id, c.env);
 
     if (!updatedCart) {
       return c.json(
@@ -211,8 +214,10 @@ export const updateCartItem: AppRouteHandler<UpdateCartItemRoute> = async (
   const { quantity } = c.req.valid("json");
 
   try {
+    const db = createDb(c.env.DATABASE_URL);
+
     // Get cart item with cart and product details
-    const cartItemWithDetails = await getCartItemWithDetails(id);
+    const cartItemWithDetails = await getCartItemWithDetails(id, c.env);
 
     if (!cartItemWithDetails) {
       return c.json(
@@ -254,11 +259,11 @@ export const updateCartItem: AppRouteHandler<UpdateCartItemRoute> = async (
 
     // Update cart item quantity in transaction
     await db.transaction(async () => {
-      await updateCartItemQuantity(id, quantity);
+      await updateCartItemQuantity(id, quantity, c.env);
     });
 
     // Fetch updated cart with all relations and calculations
-    const updatedCart = await getUserCartWithItems(user.id);
+    const updatedCart = await getUserCartWithItems(user.id, c.env);
     if (!updatedCart) {
       return c.json(
         errorResponse(
@@ -322,8 +327,10 @@ export const removeCartItem: AppRouteHandler<DeleteCartItemRoute> = async (
   const { id } = c.req.valid("param");
 
   try {
+    const db = createDb(c.env.DATABASE_URL);
+
     // Get cart item with cart details for ownership validation
-    const cartItemWithDetails = await getCartItemWithDetails(id);
+    const cartItemWithDetails = await getCartItemWithDetails(id, c.env);
 
     if (!cartItemWithDetails) {
       return c.json(
@@ -345,11 +352,11 @@ export const removeCartItem: AppRouteHandler<DeleteCartItemRoute> = async (
 
     // Delete cart item in transaction
     await db.transaction(async () => {
-      await deleteCartItem(id);
+      await deleteCartItem(id, c.env);
     });
 
     // Fetch updated cart with all relations and calculations
-    const updatedCart = await getUserCartWithItems(user.id);
+    const updatedCart = await getUserCartWithItems(user.id, c.env);
     if (!updatedCart) {
       return c.json(
         errorResponse(
@@ -410,8 +417,10 @@ export const clearUserCart: AppRouteHandler<ClearCartRoute> = async (c) => {
   const user = c.get("user");
 
   try {
+    const db = createDb(c.env.DATABASE_URL);
+
     // Get or create user cart
-    const userCart = await getOrCreateUserCart(user.id);
+    const userCart = await getOrCreateUserCart(user.id, c.env);
 
     if (!userCart) {
       return c.json(
@@ -422,7 +431,7 @@ export const clearUserCart: AppRouteHandler<ClearCartRoute> = async (c) => {
 
     // Clear all cart items in transaction
     await db.transaction(async () => {
-      await clearCartItems(userCart.id);
+      await clearCartItems(userCart.id, c.env);
     });
 
     // Return empty cart structure

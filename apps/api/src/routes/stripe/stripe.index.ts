@@ -1,6 +1,6 @@
 import { createRouter } from "@/lib/create-app";
-import * as stripeHandlers from "@/routes/webhooks/stripe.handlers";
-import * as stripeRoutes from "@/routes/webhooks/stripe.routes";
+import * as stripeHandlers from "@/routes/stripe/stripe.handlers";
+import * as stripeRoutes from "@/routes/stripe/stripe.routes";
 
 const stripeWebhookRouter = createRouter();
 
