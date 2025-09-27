@@ -13,4 +13,4 @@ Backend API for the Ahianeo application.
 2. Run `pnpm install` to install dependencies.
 3. Run `turbo dev` from the project root to start the API.
 
-See the main project [`README.md`](https://github.com/gozmanthefirst/ahianeo) for more detailed
+See the main project [`README.md`](https://github.com/gozmanthefirst/ahianeo) for more detailed.
