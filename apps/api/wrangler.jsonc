@@ -7,11 +7,11 @@
   "dev": {
     "port": 8000
   },
-  "keep_vars": true
-  // "observability": {
-  //   "enabled": true,
-  //   "head_sampling_rate": 1
-  // },
+  "keep_vars": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
   // "vars": {
   //   "MY_VAR": "my-variable"
   // },
