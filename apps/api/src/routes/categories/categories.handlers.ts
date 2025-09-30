@@ -1,4 +1,4 @@
-import { createDb, eq } from "@repo/db";
+import { db, eq } from "@repo/db";
 import { category } from "@repo/db/schemas/product-schema";
 import slugify from "slugify";
 
@@ -20,8 +20,6 @@ export const getAllCategories: AppRouteHandler<GetAllCategoriesRoute> = async (
   c,
 ) => {
   try {
-    const db = createDb(c.env.DATABASE_URL);
-
     const categories = await db.query.category.findMany();
 
     return c.json(
@@ -41,7 +39,7 @@ export const getCategory: AppRouteHandler<GetCategoryRoute> = async (c) => {
   const { id } = c.req.valid("param");
 
   try {
-    const categoryWithProducts = await getCategoryById(id, c.env);
+    const categoryWithProducts = await getCategoryById(id);
 
     if (!categoryWithProducts) {
       return c.json(
@@ -67,7 +65,6 @@ export const createCategory: AppRouteHandler<CreateCategoryRoute> = async (
   c,
 ) => {
   const categoryData = c.req.valid("json");
-  const db = createDb(c.env.DATABASE_URL);
 
   const trimmedName = categoryData.name.trim();
   if (!trimmedName) {
@@ -153,7 +150,7 @@ export const updateCategory: AppRouteHandler<UpdateCategoryRoute> = async (
       );
     }
 
-    const categoryToUpdate = await getCategoryById(id, c.env);
+    const categoryToUpdate = await getCategoryById(id);
 
     if (!categoryToUpdate) {
       return c.json(
@@ -171,8 +168,6 @@ export const updateCategory: AppRouteHandler<UpdateCategoryRoute> = async (
     }
 
     try {
-      const db = createDb(c.env.DATABASE_URL);
-
       const result = await db.transaction(async (tx) => {
         // Fetch all categories except current one and check in JavaScript
         const allCategories = await tx.query.category.findMany({
@@ -252,8 +247,6 @@ export const deleteCategory: AppRouteHandler<DeleteCategoryRoute> = async (
   const { id } = c.req.valid("param");
 
   try {
-    const db = createDb(c.env.DATABASE_URL);
-
     const result = await db.transaction(async (tx) => {
       const categoryToDelete = await tx.query.category.findFirst({
         where: (category, { eq }) => eq(category.id, id),

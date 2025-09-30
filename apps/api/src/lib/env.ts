@@ -1,6 +1,7 @@
-import z from "zod";
+import z, { type ZodError } from "zod";
 
 const EnvSchema = z.object({
+  PORT: z.coerce.number(),
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
@@ -22,15 +23,24 @@ const EnvSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
 });
 
-export type Environment = z.infer<typeof EnvSchema>;
+export type Env = z.infer<typeof EnvSchema>;
 
-// biome-ignore lint/suspicious/noExplicitAny: Required for dynamic parsing
-export const parseEnv = (data: any): Environment => {
-  const { data: env, error } = EnvSchema.safeParse(data);
+let env: Env;
 
-  if (error) {
-    throw new Error(z.prettifyError(error));
-  }
+try {
+  const parsedEnv = EnvSchema.parse(process.env);
 
-  return env;
-};
+  env = {
+    ...parsedEnv,
+    AUTH_COOKIE:
+      parsedEnv.NODE_ENV === "production"
+        ? `__Secure-${parsedEnv.AUTH_COOKIE}`
+        : parsedEnv.AUTH_COOKIE,
+  };
+} catch (e) {
+  const error = e as ZodError;
+  console.error(z.prettifyError(error));
+  process.exit(1);
+}
+
+export default env;

@@ -1,13 +1,11 @@
 import { createMiddleware } from "hono/factory";
 
-import { betterAuthInit } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import type { AppBindings } from "@/lib/types";
 import { errorResponse } from "@/utils/api-response";
 import HttpStatusCodes from "@/utils/http-status-codes";
 
 export const authMiddleware = createMiddleware<AppBindings>(async (c, next) => {
-  const auth = betterAuthInit(c.env);
-
   const authSession = await auth.api.getSession({ headers: c.req.raw.headers });
 
   if (!authSession) {

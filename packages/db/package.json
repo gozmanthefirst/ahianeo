@@ -15,19 +15,20 @@
     "db:psql": "docker exec -it ahianeo-pg psql -U user -d ahianeo",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "postinstall": "drizzle-kit generate"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.5",
     "drizzle-seed": "^0.3.1",
     "drizzle-zod": "^0.8.3",
     "pg": "^8.16.3",
-    "zod": "^4.1.3"
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@repo/tsconfig": "workspace:*",
-    "@types/bun": "latest",
+    "@types/bun": "^1.2.23",
     "@types/pg": "^8.15.5",
-    "drizzle-kit": "^0.31.4"
+    "drizzle-kit": "^0.31.5"
   }
 }

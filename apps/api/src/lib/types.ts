@@ -1,14 +1,9 @@
 import type { OpenAPIHono, RouteConfig, RouteHandler } from "@hono/zod-openapi";
 
-import { betterAuthInit } from "@/lib/auth";
 import type { errorResponse } from "@/utils/api-response";
-import type { Environment } from "./env";
-import envRuntime from "./env-runtime";
-
-const auth = betterAuthInit(envRuntime);
+import type { auth } from "./auth";
 
 export interface AppBindings {
-  Bindings: Environment;
   Variables: {
     user: typeof auth.$Infer.Session.user;
     session: typeof auth.$Infer.Session.session;

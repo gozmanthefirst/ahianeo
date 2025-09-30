@@ -1,11 +1,12 @@
 import type { ErrorHandler } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
+import env from "@/lib/env";
 import { errorResponse } from "@/utils/api-response";
 import HttpStatusCodes from "@/utils/http-status-codes";
 
 const errorHandler: ErrorHandler = (err, c) => {
-  const nodeEnv = c.env.NODE_ENV;
+  const nodeEnv = c.env.NODE_ENV || env.NODE_ENV;
 
   // Handle JSON syntax errors (400 client errors)
   if ("status" in err && typeof err.status === "number" && err.status === 400) {

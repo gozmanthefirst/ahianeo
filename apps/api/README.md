@@ -4,7 +4,7 @@ Backend API for the Ahianeo application.
 
 * Built with Hono.
 * Uses PostgreSQL for data storage.
-* Deployed with Cloudflare Workers.
+* Deployed using Docker.
 * [OpenAPI Docs with Scalar](https://api.ahianeo.gozman.xyz/api/reference)
 
 ## Getting Started

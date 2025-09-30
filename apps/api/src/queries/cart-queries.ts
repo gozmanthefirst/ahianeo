@@ -1,14 +1,10 @@
-import { createDb, eq } from "@repo/db";
+import { db, eq } from "@repo/db";
 import { cart, cartItem } from "@repo/db/schemas/cart-schema";
-
-import type { Environment } from "@/lib/env";
 
 /**
  * Creates a new cart for the specified user
  */
-export const createCartForUser = async (userId: string, env: Environment) => {
-  const db = createDb(env.DATABASE_URL);
-
+export const createCartForUser = async (userId: string) => {
   const [newCart] = await db
     .insert(cart)
     .values({
@@ -22,12 +18,7 @@ export const createCartForUser = async (userId: string, env: Environment) => {
 /**
  * Gets a user's cart with all cart items and products
  */
-export const getUserCartWithItems = async (
-  userId: string,
-  env: Environment,
-) => {
-  const db = createDb(env.DATABASE_URL);
-
+export const getUserCartWithItems = async (userId: string) => {
   const userCart = await db.query.cart.findFirst({
     where: (cart, { eq }) => eq(cart.userId, userId),
     with: {
@@ -45,16 +36,16 @@ export const getUserCartWithItems = async (
 /**
  * Gets or creates a cart for the user (fallback for existing users)
  */
-export const getOrCreateUserCart = async (userId: string, env: Environment) => {
+export const getOrCreateUserCart = async (userId: string) => {
   // First try to get existing cart
-  let userCart = await getUserCartWithItems(userId, env);
+  let userCart = await getUserCartWithItems(userId);
 
   // If no cart exists, create one
   if (!userCart) {
-    await createCartForUser(userId, env);
+    await createCartForUser(userId);
 
     // Fetch the cart with relations
-    userCart = await getUserCartWithItems(userId, env);
+    userCart = await getUserCartWithItems(userId);
   }
 
   return userCart;
@@ -63,13 +54,7 @@ export const getOrCreateUserCart = async (userId: string, env: Environment) => {
 /**
  * Gets a specific cart item for a product in a cart
  */
-export const getCartItem = async (
-  cartId: string,
-  productId: string,
-  env: Environment,
-) => {
-  const db = createDb(env.DATABASE_URL);
-
+export const getCartItem = async (cartId: string, productId: string) => {
   const cartItem = await db.query.cartItem.findFirst({
     where: (cartItem, { eq, and }) =>
       and(eq(cartItem.cartId, cartId), eq(cartItem.productId, productId)),
@@ -85,10 +70,7 @@ export const addCartItem = async (
   cartId: string,
   productId: string,
   quantity: number,
-  env: Environment,
 ) => {
-  const db = createDb(env.DATABASE_URL);
-
   const [newCartItem] = await db
     .insert(cartItem)
     .values({
@@ -107,10 +89,7 @@ export const addCartItem = async (
 export const updateCartItemQuantity = async (
   cartItemId: string,
   quantity: number,
-  env: Environment,
 ) => {
-  const db = createDb(env.DATABASE_URL);
-
   const [updatedCartItem] = await db
     .update(cartItem)
     .set({ quantity })
@@ -123,12 +102,7 @@ export const updateCartItemQuantity = async (
 /**
  * Gets a cart item with cart and product details for ownership validation
  */
-export const getCartItemWithDetails = async (
-  cartItemId: string,
-  env: Environment,
-) => {
-  const db = createDb(env.DATABASE_URL);
-
+export const getCartItemWithDetails = async (cartItemId: string) => {
   const cartItemWithDetails = await db.query.cartItem.findFirst({
     where: eq(cartItem.id, cartItemId),
     with: {
@@ -143,9 +117,7 @@ export const getCartItemWithDetails = async (
 /**
  * Deletes a cart item by ID
  */
-export const deleteCartItem = async (cartItemId: string, env: Environment) => {
-  const db = createDb(env.DATABASE_URL);
-
+export const deleteCartItem = async (cartItemId: string) => {
   const [deletedCartItem] = await db
     .delete(cartItem)
     .where(eq(cartItem.id, cartItemId))
@@ -157,9 +129,7 @@ export const deleteCartItem = async (cartItemId: string, env: Environment) => {
 /**
  * Clears all items from a user's cart
  */
-export const clearCartItems = async (cartId: string, env: Environment) => {
-  const db = createDb(env.DATABASE_URL);
-
+export const clearCartItems = async (cartId: string) => {
   const deletedItems = await db
     .delete(cartItem)
     .where(eq(cartItem.cartId, cartId))
@@ -171,12 +141,7 @@ export const clearCartItems = async (cartId: string, env: Environment) => {
 /**
  * Clear all cart items for a specific user (by user ID)
  */
-export const clearCartItemsByUserId = async (
-  userId: string,
-  env: Environment,
-) => {
-  const db = createDb(env.DATABASE_URL);
-
+export const clearCartItemsByUserId = async (userId: string) => {
   // First get the user's cart
   const userCart = await db.query.cart.findFirst({
     where: (cart, { eq }) => eq(cart.userId, userId),
