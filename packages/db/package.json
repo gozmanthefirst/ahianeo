@@ -15,8 +15,7 @@
     "db:psql": "docker exec -it ahianeo-pg psql -U user -d ahianeo",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio",
-    "postinstall": "drizzle-kit migrate"
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.5",
